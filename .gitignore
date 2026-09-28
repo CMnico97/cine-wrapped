@@ -1,18 +1,17 @@
-# Node
+# Dependencias de Node.js
 node_modules/
-npm-debug.log*
 
 # Variables de entorno
 .env
 .env.*
 
-# Build
+# Archivos generados durante el build
 dist/
 build/
 
-# Sistema operativo
+# Archivos del sistema operativo
 .DS_Store
 Thumbs.db
 
-# Editor
+# Configuración local de VS Code
 .vscode/
