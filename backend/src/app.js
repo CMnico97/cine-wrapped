@@ -1,4 +1,5 @@
-// Importamos Express para crear y configurar nuestra aplicación.
+// Importamos Express para crear y configurar
+// nuestra aplicación.
 const express = require('express');
 
 // Importamos CORS para permitir que nuestro frontend
@@ -7,24 +8,25 @@ const cors = require('cors');
 
 // Importamos el pool de conexiones a MySQL.
 //
-// Lo utilizaremos temporalmente en la ruta de prueba
-// para comprobar que la conexión con cine_db sigue funcionando.
+// Actualmente lo utilizamos en nuestra ruta temporal
+// de prueba de conexión con la base de datos.
 const pool = require('./config/database');
 
-// Importamos las rutas relacionadas con autenticación.
-//
-// Aquí tendremos registro, login y posteriormente
-// otras operaciones relacionadas con la sesión.
+// Importamos las rutas relacionadas
+// con autenticación.
 const authRoutes = require('./routes/auth.routes');
-
 
 // =====================================================
 // CREACIÓN DE LA APLICACIÓN
 // =====================================================
 
-// Creamos la aplicación de Express.
+// Creamos la aplicación de Express después
+// de haber realizado todas nuestras importaciones.
 const app = express();
 
+// Importamos las rutas relacionadas
+// con la cartelera de películas.
+const peliculaRoutes = require('./routes/pelicula.routes');
 
 // =====================================================
 // MIDDLEWARES GENERALES
@@ -70,6 +72,16 @@ app.use(express.json());
 // POST /auth/register
 app.use('/auth', authRoutes);
 
+// Montamos las rutas relacionadas con películas.
+//
+// Por ejemplo:
+//
+// router.get('/', ...)
+//
+// se transforma en:
+//
+// GET /peliculas
+app.use('/peliculas', peliculaRoutes);
 
 // =====================================================
 // RUTA DE PRUEBA DE EXPRESS
