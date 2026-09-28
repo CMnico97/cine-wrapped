@@ -8,6 +8,12 @@ const {
   login
 } = require('../controllers/auth.controller');
 
+// Importamos el middleware encargado de comprobar
+// que el usuario tenga un JWT válido.
+const {
+  verificarToken
+} = require('../middleware/auth.middleware');
+
 
 // =====================================================
 // CREACIÓN DEL ROUTER
@@ -44,6 +50,26 @@ router.post('/register', register);
 //
 // POST /auth/login
 router.post('/login', login);
+
+
+// =====================================================
+// RUTA PROTEGIDA DE PRUEBA
+// =====================================================
+
+// Esta ruta solamente podrá utilizarse si la petición
+// contiene un token JWT válido.
+//
+// Antes de ejecutar el controlador de la ruta,
+// Express ejecutará verificarToken.
+router.get('/me', verificarToken, (req, res) => {
+  // req.usuario fue creado dentro del middleware
+  // después de verificar correctamente el JWT.
+  res.status(200).json({
+    ok: true,
+    message: 'Token válido',
+    usuario: req.usuario
+  });
+});
 
 
 // =====================================================
