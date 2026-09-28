@@ -8,6 +8,11 @@ const {
   obtenerDetallePelicula
 } = require('../controllers/pelicula.controller');
 
+// Importamos el controlador encargado de obtener
+// las funciones correspondientes a una película.
+const {
+  listarFuncionesPorPelicula
+} = require('../controllers/funcion.controller');
 
 // =====================================================
 // CREACIÓN DEL ROUTER
@@ -50,6 +55,20 @@ router.get('/', listarPeliculas);
 // req.params.id = "1"
 router.get('/:id', obtenerDetallePelicula);
 
+// =====================================================
+// LISTAR FUNCIONES DE UNA PELÍCULA
+// =====================================================
+
+// Esta ruta devuelve todas las funciones
+// correspondientes a una película.
+//
+// Por ejemplo:
+//
+// GET /peliculas/1/funciones
+router.get(
+  '/:id/funciones',
+  listarFuncionesPorPelicula
+);
 
 // =====================================================
 // EXPORTACIÓN DEL ROUTER

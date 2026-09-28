@@ -16,6 +16,10 @@ const pool = require('./config/database');
 // con autenticación.
 const authRoutes = require('./routes/auth.routes');
 
+// Importamos las rutas relacionadas
+// con las funciones del cine.
+const funcionRoutes = require('./routes/funcion.routes');
+
 // =====================================================
 // CREACIÓN DE LA APLICACIÓN
 // =====================================================
@@ -82,6 +86,17 @@ app.use('/auth', authRoutes);
 //
 // GET /peliculas
 app.use('/peliculas', peliculaRoutes);
+
+// Montamos las rutas relacionadas con funciones.
+//
+// Por ejemplo:
+//
+// router.get('/:id/asientos', ...)
+//
+// se transforma en:
+//
+// GET /funciones/:id/asientos
+app.use('/funciones', funcionRoutes);
 
 // =====================================================
 // RUTA DE PRUEBA DE EXPRESS
