@@ -20,6 +20,10 @@ const authRoutes = require('./routes/auth.routes');
 // con las funciones del cine.
 const funcionRoutes = require('./routes/funcion.routes');
 
+// Importamos las rutas relacionadas
+// con las entradas y compras simuladas.
+const entradaRoutes = require('./routes/entrada.routes');
+
 // =====================================================
 // CREACIÓN DE LA APLICACIÓN
 // =====================================================
@@ -97,6 +101,15 @@ app.use('/peliculas', peliculaRoutes);
 //
 // GET /funciones/:id/asientos
 app.use('/funciones', funcionRoutes);
+
+// Montamos las rutas relacionadas con entradas.
+//
+// router.post('/', ...)
+//
+// se transforma en:
+//
+// POST /entradas
+app.use('/entradas', entradaRoutes);
 
 // =====================================================
 // RUTA DE PRUEBA DE EXPRESS
