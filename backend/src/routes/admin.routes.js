@@ -19,9 +19,11 @@ const {
 const {
   crearPelicula,
   actualizarPelicula,
-  eliminarPelicula
+  eliminarPelicula,
+  crearFuncion,
+  actualizarFuncion,
+  eliminarFuncion
 } = require('../controllers/admin.controller');
-
 
 // =====================================================
 // CREACIÓN DEL ROUTER
@@ -85,6 +87,44 @@ router.put(
 router.delete(
   '/peliculas/:id',
   eliminarPelicula
+);
+
+// =====================================================
+// ADMINISTRACIÓN DE FUNCIONES
+// =====================================================
+
+// Permite crear una nueva función.
+//
+// Esta ruta ya está protegida mediante:
+//
+// verificarToken
+// verificarAdmin
+//
+// porque ambos middlewares fueron registrados
+// anteriormente con router.use().
+router.post(
+  '/funciones',
+  crearFuncion
+);
+
+// Permite modificar una función existente.
+//
+// Ejemplo:
+//
+// PUT /admin/funciones/3
+router.put(
+  '/funciones/:id',
+  actualizarFuncion
+);
+
+// Permite eliminar una función existente.
+//
+// Ejemplo:
+//
+// DELETE /admin/funciones/3
+router.delete(
+  '/funciones/:id',
+  eliminarFuncion
 );
 
 // =====================================================

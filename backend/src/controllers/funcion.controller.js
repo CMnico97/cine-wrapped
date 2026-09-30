@@ -1,10 +1,20 @@
-// Importamos las funciones relacionadas
+// Importamos los servicios relacionados
 // con las funciones del cine.
 const {
   obtenerFuncionesPorPelicula,
   obtenerFuncionPorId,
   obtenerAsientosPorFuncion
 } = require('../services/funcion.service');
+
+
+// Importamos el servicio que permite buscar
+// una película utilizando su identificador.
+//
+// Lo necesitamos para comprobar que una película
+// exista antes de consultar sus funciones.
+const {
+  obtenerPeliculaPorId
+} = require('../services/pelicula.service');
 
 // =====================================================
 // LISTAR FUNCIONES DE UNA PELÍCULA

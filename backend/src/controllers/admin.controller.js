@@ -7,6 +7,15 @@ const {
   eliminarPelicula: eliminarPeliculaService
 } = require('../services/pelicula.service');
 
+// Importamos los servicios necesarios para
+// administrar las funciones del cine.
+const {
+  crearFuncion: crearFuncionService,
+  obtenerFuncionPorId,
+  actualizarFuncion: actualizarFuncionService,
+  eliminarFuncion: eliminarFuncionService
+} = require('../services/funcion.service');
+
 // =====================================================
 // CREAR PELÍCULA
 // =====================================================
@@ -350,11 +359,477 @@ const eliminarPelicula = async (req, res) => {
 };
 
 // =====================================================
+// CREAR FUNCIÓN
+// =====================================================
+
+// Controlador correspondiente a:
+//
+// POST /admin/funciones
+//
+// Esta operación solamente puede ser realizada
+// por un usuario administrador.
+const crearFuncion = async (req, res) => {
+  try {
+    // Obtenemos los datos enviados por el administrador.
+    const {
+      pelicula_id,
+      fecha,
+      hora,
+      sala
+    } = req.body;
+
+
+    // =================================================
+    // VALIDAR CAMPOS OBLIGATORIOS
+    // =================================================
+
+    if (
+      pelicula_id === undefined ||
+      !fecha ||
+      !hora ||
+      sala === undefined
+    ) {
+      return res.status(400).json({
+        ok: false,
+        message: 'Faltan datos obligatorios de la función'
+      });
+    }
+
+
+    // =================================================
+    // VALIDAR PELÍCULA
+    // =================================================
+
+    // Convertimos el identificador recibido
+    // a un número.
+    const peliculaId = Number(pelicula_id);
+
+    if (
+      !Number.isInteger(peliculaId) ||
+      peliculaId <= 0
+    ) {
+      return res.status(400).json({
+        ok: false,
+        message: 'El id de la película no es válido'
+      });
+    }
+
+
+    // =================================================
+    // COMPROBAR QUE LA PELÍCULA EXISTA
+    // =================================================
+
+    // Ya tenemos este servicio porque lo utilizamos
+    // anteriormente en el CRUD de películas.
+    const pelicula =
+      await obtenerPeliculaPorId(peliculaId);
+
+    if (!pelicula) {
+      return res.status(404).json({
+        ok: false,
+        message: 'Película no encontrada'
+      });
+    }
+
+
+    // =================================================
+    // VALIDAR SALA
+    // =================================================
+
+    // En nuestro modelo actual la sala se representa
+    // simplemente mediante un número entero positivo.
+    const salaNumero = Number(sala);
+
+    if (
+      !Number.isInteger(salaNumero) ||
+      salaNumero <= 0
+    ) {
+      return res.status(400).json({
+        ok: false,
+        message:
+          'La sala debe ser un número entero mayor que 0'
+      });
+    }
+
+
+    // =================================================
+    // VALIDAR FECHA
+    // =================================================
+
+    // Esperamos una fecha con formato:
+    //
+    // YYYY-MM-DD
+    //
+    // Ejemplo:
+    //
+    // 2026-10-15
+    const formatoFecha =
+      /^\d{4}-\d{2}-\d{2}$/;
+
+    if (!formatoFecha.test(fecha)) {
+      return res.status(400).json({
+        ok: false,
+        message:
+          'La fecha debe tener formato YYYY-MM-DD'
+      });
+    }
+
+
+    // =================================================
+    // VALIDAR HORA
+    // =================================================
+
+    // Aceptamos:
+    //
+    // HH:MM
+    //
+    // o:
+    //
+    // HH:MM:SS
+    //
+    // y además limitamos las horas a 00-23
+    // y los minutos/segundos a 00-59.
+    const formatoHora =
+      /^([01]\d|2[0-3]):[0-5]\d(:[0-5]\d)?$/;
+
+    if (!formatoHora.test(hora)) {
+      return res.status(400).json({
+        ok: false,
+        message:
+          'La hora debe tener formato HH:MM o HH:MM:SS'
+      });
+    }
+
+
+    // =================================================
+    // CREAR FUNCIÓN
+    // =================================================
+
+    const funcionId = await crearFuncionService(
+      peliculaId,
+      fecha,
+      hora,
+      salaNumero
+    );
+
+
+    // =================================================
+    // RESPUESTA EXITOSA
+    // =================================================
+
+    return res.status(201).json({
+      ok: true,
+      message: 'Función creada correctamente',
+      funcion: {
+        id: funcionId,
+        pelicula_id: peliculaId,
+        fecha,
+        hora,
+        sala: salaNumero
+      }
+    });
+
+  } catch (error) {
+    console.error(
+      'Error al crear función:',
+      error.message
+    );
+
+    return res.status(500).json({
+      ok: false,
+      message: 'Error interno del servidor'
+    });
+  }
+};
+
+// =====================================================
+// ACTUALIZAR FUNCIÓN
+// =====================================================
+
+// Controlador correspondiente a:
+//
+// PUT /admin/funciones/:id
+//
+// Permite modificar una función existente.
+const actualizarFuncion = async (req, res) => {
+  try {
+    // Obtenemos el identificador de la función
+    // desde la URL.
+    const funcionId = Number(req.params.id);
+
+
+    // =================================================
+    // VALIDAR ID DE LA FUNCIÓN
+    // =================================================
+
+    if (
+      !Number.isInteger(funcionId) ||
+      funcionId <= 0
+    ) {
+      return res.status(400).json({
+        ok: false,
+        message: 'El id de la función no es válido'
+      });
+    }
+
+
+    // =================================================
+    // COMPROBAR QUE LA FUNCIÓN EXISTA
+    // =================================================
+
+    const funcionExistente =
+      await obtenerFuncionPorId(funcionId);
+
+    if (!funcionExistente) {
+      return res.status(404).json({
+        ok: false,
+        message: 'Función no encontrada'
+      });
+    }
+
+
+    // =================================================
+    // OBTENER DATOS
+    // =================================================
+
+    const {
+      pelicula_id,
+      fecha,
+      hora,
+      sala
+    } = req.body;
+
+
+    // =================================================
+    // VALIDAR CAMPOS OBLIGATORIOS
+    // =================================================
+
+    if (
+      pelicula_id === undefined ||
+      !fecha ||
+      !hora ||
+      sala === undefined
+    ) {
+      return res.status(400).json({
+        ok: false,
+        message: 'Faltan datos obligatorios de la función'
+      });
+    }
+
+
+    // =================================================
+    // VALIDAR PELÍCULA
+    // =================================================
+
+    const peliculaId = Number(pelicula_id);
+
+    if (
+      !Number.isInteger(peliculaId) ||
+      peliculaId <= 0
+    ) {
+      return res.status(400).json({
+        ok: false,
+        message: 'El id de la película no es válido'
+      });
+    }
+
+
+    // Comprobamos que la película indicada
+    // realmente exista.
+    const pelicula =
+      await obtenerPeliculaPorId(peliculaId);
+
+    if (!pelicula) {
+      return res.status(404).json({
+        ok: false,
+        message: 'Película no encontrada'
+      });
+    }
+
+
+    // =================================================
+    // VALIDAR SALA
+    // =================================================
+
+    const salaNumero = Number(sala);
+
+    if (
+      !Number.isInteger(salaNumero) ||
+      salaNumero <= 0
+    ) {
+      return res.status(400).json({
+        ok: false,
+        message:
+          'La sala debe ser un número entero mayor que 0'
+      });
+    }
+
+
+    // =================================================
+    // VALIDIDAR FECHA
+    // =================================================
+
+    // Esperamos el formato YYYY-MM-DD.
+    const formatoFecha =
+      /^\d{4}-\d{2}-\d{2}$/;
+
+    if (!formatoFecha.test(fecha)) {
+      return res.status(400).json({
+        ok: false,
+        message:
+          'La fecha debe tener formato YYYY-MM-DD'
+      });
+    }
+
+
+    // =================================================
+    // VALIDAR HORA
+    // =================================================
+
+    // Permitimos HH:MM o HH:MM:SS.
+    const formatoHora =
+      /^([01]\d|2[0-3]):[0-5]\d(:[0-5]\d)?$/;
+
+    if (!formatoHora.test(hora)) {
+      return res.status(400).json({
+        ok: false,
+        message:
+          'La hora debe tener formato HH:MM o HH:MM:SS'
+      });
+    }
+
+
+    // =================================================
+    // ACTUALIZAR FUNCIÓN
+    // =================================================
+
+    await actualizarFuncionService(
+      funcionId,
+      peliculaId,
+      fecha,
+      hora,
+      salaNumero
+    );
+
+
+    // =================================================
+    // RESPUESTA EXITOSA
+    // =================================================
+
+    return res.status(200).json({
+      ok: true,
+      message: 'Función actualizada correctamente',
+      funcion: {
+        id: funcionId,
+        pelicula_id: peliculaId,
+        fecha,
+        hora,
+        sala: salaNumero
+      }
+    });
+
+  } catch (error) {
+    console.error(
+      'Error al actualizar función:',
+      error.message
+    );
+
+    return res.status(500).json({
+      ok: false,
+      message: 'Error interno del servidor'
+    });
+  }
+};
+
+// =====================================================
+// ELIMINAR FUNCIÓN
+// =====================================================
+
+// Controlador correspondiente a:
+//
+// DELETE /admin/funciones/:id
+//
+// Solamente los administradores pueden acceder
+// a esta operación.
+const eliminarFuncion = async (req, res) => {
+  try {
+    // Obtenemos el identificador enviado
+    // mediante la URL.
+    const funcionId = Number(req.params.id);
+
+
+    // =================================================
+    // VALIDAR ID
+    // =====================================================
+
+    if (
+      !Number.isInteger(funcionId) ||
+      funcionId <= 0
+    ) {
+      return res.status(400).json({
+        ok: false,
+        message: 'El id de la función no es válido'
+      });
+    }
+
+
+    // =================================================
+    // COMPROBAR EXISTENCIA
+    // =====================================================
+
+    // Antes de eliminar comprobamos que la función
+    // realmente exista.
+    const funcionExistente =
+      await obtenerFuncionPorId(funcionId);
+
+    if (!funcionExistente) {
+      return res.status(404).json({
+        ok: false,
+        message: 'Función no encontrada'
+      });
+    }
+
+
+    // =================================================
+    // ELIMINAR FUNCIÓN
+    // =====================================================
+
+    await eliminarFuncionService(funcionId);
+
+
+    // =================================================
+    // RESPUESTA EXITOSA
+    // =====================================================
+
+    return res.status(200).json({
+      ok: true,
+      message: 'Función eliminada correctamente'
+    });
+
+  } catch (error) {
+    // Mostramos el error técnico en la terminal
+    // durante el desarrollo.
+    console.error(
+      'Error al eliminar función:',
+      error.message
+    );
+
+    return res.status(500).json({
+      ok: false,
+      message: 'Error interno del servidor'
+    });
+  }
+};
+
+// =====================================================
 // EXPORTACIÓN DE CONTROLADORES
 // =====================================================
 
 module.exports = {
   crearPelicula,
   actualizarPelicula,
-  eliminarPelicula
+  eliminarPelicula,
+  crearFuncion,
+  actualizarFuncion,
+  eliminarFuncion
 };

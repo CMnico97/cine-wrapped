@@ -123,13 +123,126 @@ const obtenerAsientosPorFuncion = async (
 };
 
 // =====================================================
+// CREAR FUNCIÓN
+// =====================================================
+
+// Esta función registra una nueva función
+// cinematográfica en la base de datos.
+//
+// Recibe:
+//
+// - peliculaId: película que será proyectada.
+// - fecha: día de la función.
+// - hora: horario de la función.
+// - sala: número de sala.
+//
+// El controlador será responsable de validar
+// estos datos antes de llamar al servicio.
+const crearFuncion = async (
+  peliculaId,
+  fecha,
+  hora,
+  sala
+) => {
+  const [result] = await pool.query(
+    `
+      INSERT INTO funciones (
+        pelicula_id,
+        fecha,
+        hora,
+        sala
+      )
+      VALUES (?, ?, ?, ?)
+    `,
+    [
+      peliculaId,
+      fecha,
+      hora,
+      sala
+    ]
+  );
+
+  // MySQL genera automáticamente el identificador
+  // de la nueva función.
+  return result.insertId;
+};
+
+// =====================================================
+// ACTUALIZAR FUNCIÓN
+// =====================================================
+
+// Esta función actualiza los datos de una función
+// existente en la base de datos.
+//
+// Recibe:
+//
+// - id: identificador de la función.
+// - peliculaId: película asociada.
+// - fecha: fecha de la función.
+// - hora: horario de la función.
+// - sala: número de sala.
+const actualizarFuncion = async (
+  id,
+  peliculaId,
+  fecha,
+  hora,
+  sala
+) => {
+  const [result] = await pool.query(
+    `
+      UPDATE funciones
+      SET
+        pelicula_id = ?,
+        fecha = ?,
+        hora = ?,
+        sala = ?
+      WHERE id = ?
+    `,
+    [
+      peliculaId,
+      fecha,
+      hora,
+      sala,
+      id
+    ]
+  );
+
+  // Devolvemos la cantidad de filas afectadas
+  // por la operación.
+  return result.affectedRows;
+};
+
+// =====================================================
+// ELIMINAR FUNCIÓN
+// =====================================================
+
+// Esta función elimina una función existente
+// utilizando su identificador.
+//
+// El controlador comprobará previamente
+// que la función exista.
+const eliminarFuncion = async (id) => {
+  const [result] = await pool.query(
+    `
+      DELETE FROM funciones
+      WHERE id = ?
+    `,
+    [id]
+  );
+
+  // Devolvemos la cantidad de filas eliminadas.
+  return result.affectedRows;
+};
+
+// =====================================================
 // EXPORTACIÓN DEL SERVICIO
 // =====================================================
 
-// Exportamos las funciones para poder utilizarlas
-// desde nuestros controladores.
 module.exports = {
   obtenerFuncionesPorPelicula,
   obtenerFuncionPorId,
-  obtenerAsientosPorFuncion
+  obtenerAsientosPorFuncion,
+  crearFuncion,
+  actualizarFuncion,
+  eliminarFuncion
 };
