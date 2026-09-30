@@ -5,13 +5,14 @@ const {
 } = require('../services/funcion.service');
 
 // Importamos las operaciones necesarias
-// para validar y registrar la compra.
+// para validar compras, registrar entradas
+// y consultar el historial del usuario.
 const {
   obtenerAsientosPorIds,
   obtenerAsientosOcupados,
-  crearEntrada: crearEntradaService
+  crearEntrada: crearEntradaService,
+  obtenerEntradasPorUsuario
 } = require('../services/entrada.service');
-
 
 // =====================================================
 // CREAR ENTRADA
@@ -283,13 +284,135 @@ return res.status(201).json({
   }
 };
 
+// =====================================================
+// OBTENER HISTORIAL DEL USUARIO
+// =====================================================
+
+// Este controlador manejará:
+//
+// GET /usuarios/me/entradas
+//
+// El identificador del usuario no será recibido
+// desde la URL ni desde el cliente.
+//
+// Lo obtendremos directamente del JWT previamente
+// validado por nuestro middleware.
+const listarEntradasUsuario = async (req, res) => {
+  try {
+    // Obtenemos el usuario autenticado.
+    const usuarioId = req.usuario.id;
+
+    // Consultamos todas sus entradas.
+    const rows = await obtenerEntradasPorUsuario(
+      usuarioId
+    );
+
+
+    // =================================================
+    // AGRUPAR RESULTADOS
+    // =================================================
+
+    // La consulta SQL devuelve una fila por asiento.
+    //
+    // Por ejemplo, una entrada con A2 y A3 genera:
+    //
+    // entrada 4 - A2
+    // entrada 4 - A3
+    //
+    // Pero nuestra API debe devolver una sola entrada
+    // que contenga un arreglo de asientos.
+    //
+    // Utilizamos Map para agrupar las filas
+    // utilizando entrada_id como clave.
+    const entradasMap = new Map();
+
+
+    rows.forEach((row) => {
+      // Si todavía no hemos agregado esta entrada,
+      // creamos su estructura principal.
+      if (!entradasMap.has(row.entrada_id)) {
+        entradasMap.set(row.entrada_id, {
+          id: row.entrada_id,
+          codigo: row.codigo,
+          estado: row.estado,
+          fecha_compra: row.fecha_compra,
+
+          pelicula: {
+            id: row.pelicula_id,
+            titulo: row.pelicula_titulo,
+            poster: row.pelicula_poster
+          },
+
+          funcion: {
+            id: row.funcion_id,
+            fecha: row.funcion_fecha,
+            hora: row.funcion_hora,
+            sala: row.funcion_sala
+          },
+
+          asientos: []
+        });
+      }
+
+
+      // Obtenemos la entrada que acabamos de crear
+      // o que ya existía dentro del Map.
+      const entrada = entradasMap.get(
+        row.entrada_id
+      );
+
+
+      // Si existe un asiento asociado,
+      // lo agregamos al arreglo.
+      //
+      // Esta comprobación también permite que una
+      // entrada cancelada sin asientos siga apareciendo.
+      if (row.asiento_id !== null) {
+        entrada.asientos.push({
+          id: row.asiento_id,
+          fila: row.asiento_fila,
+          numero: row.asiento_numero
+        });
+      }
+    });
+
+
+    // Convertimos el Map nuevamente en un arreglo
+    // para poder enviarlo como JSON.
+    const entradas = Array.from(
+      entradasMap.values()
+    );
+
+
+    // =================================================
+    // RESPUESTA
+    // =================================================
+
+    return res.status(200).json({
+      ok: true,
+      entradas
+    });
+
+  } catch (error) {
+    // Mostramos el error técnico solamente
+    // en la terminal del backend.
+    console.error(
+      'Error al obtener historial de entradas:',
+      error.message
+    );
+
+    return res.status(500).json({
+      ok: false,
+      message: 'Error interno del servidor'
+    });
+  }
+};
 
 // =====================================================
-// EXPORTACIÓN DEL CONTROLADOR
+// EXPORTACIÓN DE CONTROLADORES
 // =====================================================
 
-// Exportamos el controlador para utilizarlo
-// posteriormente desde entrada.routes.js.
 module.exports = {
-  crearEntrada
+  crearEntrada,
+  listarEntradasUsuario
 };

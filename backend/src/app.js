@@ -24,6 +24,10 @@ const funcionRoutes = require('./routes/funcion.routes');
 // con las entradas y compras simuladas.
 const entradaRoutes = require('./routes/entrada.routes');
 
+// Importamos las rutas relacionadas
+// con la información personal del usuario.
+const usuarioRoutes = require('./routes/usuario.routes');
+
 // =====================================================
 // CREACIÓN DE LA APLICACIÓN
 // =====================================================
@@ -110,6 +114,17 @@ app.use('/funciones', funcionRoutes);
 //
 // POST /entradas
 app.use('/entradas', entradaRoutes);
+
+// Montamos las rutas relacionadas con usuarios.
+//
+// Por ejemplo:
+//
+// router.get('/me/entradas', ...)
+//
+// se convierte en:
+//
+// GET /usuarios/me/entradas
+app.use('/usuarios', usuarioRoutes);
 
 // =====================================================
 // RUTA DE PRUEBA DE EXPRESS

@@ -259,6 +259,75 @@ const crearEntrada = async (
   }
 };
 
+// =====================================================
+// OBTENER HISTORIAL DE ENTRADAS DEL USUARIO
+// =====================================================
+
+// Esta función obtiene todas las entradas pertenecientes
+// a un usuario.
+//
+// Además de los datos básicos de la entrada,
+// recuperamos información de:
+//
+// - la película
+// - la función
+// - los asientos
+//
+// Para conseguirlo utilizamos JOIN entre las tablas
+// relacionadas de nuestra base de datos.
+const obtenerEntradasPorUsuario = async (usuarioId) => {
+  const [rows] = await pool.query(
+    `
+      SELECT
+        e.id AS entrada_id,
+        e.codigo,
+        e.estado,
+        e.fecha_compra,
+
+        p.id AS pelicula_id,
+        p.titulo AS pelicula_titulo,
+        p.poster AS pelicula_poster,
+
+        f.id AS funcion_id,
+        f.fecha AS funcion_fecha,
+        f.hora AS funcion_hora,
+        f.sala AS funcion_sala,
+
+        a.id AS asiento_id,
+        a.fila AS asiento_fila,
+        a.numero AS asiento_numero
+
+      FROM entradas AS e
+
+      INNER JOIN funciones AS f
+        ON f.id = e.funcion_id
+
+      INNER JOIN peliculas AS p
+        ON p.id = f.pelicula_id
+
+      LEFT JOIN entrada_asientos AS ea
+        ON ea.entrada_id = e.id
+
+      LEFT JOIN asientos AS a
+        ON a.id = ea.asiento_id
+
+      WHERE e.usuario_id = ?
+
+      ORDER BY
+        e.fecha_compra DESC,
+        e.id DESC,
+        a.fila ASC,
+        a.numero ASC
+    `,
+    [usuarioId]
+  );
+
+  return rows;
+};
+
+// =====================================================
+// EXPORTACIÓN DEL SERVICIO
+// =====================================================
 
 // =====================================================
 // EXPORTACIÓN DEL SERVICIO
@@ -267,5 +336,6 @@ const crearEntrada = async (
 module.exports = {
   obtenerAsientosPorIds,
   obtenerAsientosOcupados,
-  crearEntrada
+  crearEntrada,
+  obtenerEntradasPorUsuario
 };
