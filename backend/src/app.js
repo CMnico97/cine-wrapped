@@ -28,6 +28,10 @@ const entradaRoutes = require('./routes/entrada.routes');
 // con la información personal del usuario.
 const usuarioRoutes = require('./routes/usuario.routes');
 
+// Importamos las rutas correspondientes
+// a las operaciones administrativas.
+const adminRoutes = require('./routes/admin.routes');
+
 // =====================================================
 // CREACIÓN DE LA APLICACIÓN
 // =====================================================
@@ -140,7 +144,19 @@ app.get('/api/health', (req, res) => {
   });
 });
 
-
+// Montamos las rutas administrativas.
+//
+// Todas las rutas declaradas dentro de
+// admin.routes.js tendrán el prefijo /admin.
+//
+// Por ejemplo:
+//
+// router.get('/test', ...)
+//
+// se transforma en:
+//
+// GET /admin/test
+app.use('/admin', adminRoutes);
 // =====================================================
 // RUTA TEMPORAL DE PRUEBA DE MYSQL
 // =====================================================

@@ -133,9 +133,69 @@ const verificarToken = (req, res, next) => {
   }
 };
 
+// =====================================================
+// VERIFICAR ROL DE ADMINISTRADOR
+// =====================================================
 
-// Exportamos el middleware para poder utilizarlo
-// posteriormente en nuestras rutas protegidas.
+// Este middleware se utilizará después de verificarToken.
+//
+// Por lo tanto, cuando esta función se ejecute,
+// req.usuario ya debería contener:
+//
+// {
+//   id: ...,
+//   rol: ...
+// }
+//
+// Solamente permitiremos continuar si el usuario
+// tiene el rol "admin".
+const verificarAdmin = (req, res, next) => {
+  // Comprobamos que exista información del usuario.
+  //
+  // Normalmente siempre existirá porque este middleware
+  // se utilizará después de verificarToken.
+  if (!req.usuario) {
+    return res.status(401).json({
+      ok: false,
+      message: 'Usuario no autenticado'
+    });
+  }
+
+
+  // ===================================================
+  // COMPROBAR ROL
+  // ===================================================
+
+  // Si el usuario no tiene rol de administrador,
+  // rechazamos el acceso.
+  if (req.usuario.rol !== 'admin') {
+    return res.status(403).json({
+      ok: false,
+      message:
+        'No tiene permisos para realizar esta operación'
+    });
+  }
+
+
+  // ===================================================
+  // ACCESO AUTORIZADO
+  // ===================================================
+
+  // Si llegamos hasta aquí significa que:
+  //
+  // 1. El usuario está autenticado.
+  // 2. Su rol es admin.
+  //
+  // Permitimos que Express continúe con
+  // el siguiente middleware o controlador.
+  next();
+};
+
+// =====================================================
+// EXPORTACIÓN DE MIDDLEWARES
+// =====================================================
+
 module.exports = {
-  verificarToken
+  verificarToken,
+  verificarAdmin
 };

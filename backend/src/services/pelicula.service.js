@@ -78,12 +78,136 @@ const obtenerPeliculaPorId = async (id) => {
 };
 
 // =====================================================
+// CREAR PELÍCULA
+// =====================================================
+
+// Esta función registra una nueva película
+// en nuestra base de datos.
+//
+// Recibe los datos previamente validados
+// por el controlador.
+const crearPelicula = async (
+  titulo,
+  sinopsis,
+  duracion,
+  genero,
+  director,
+  poster,
+  fechaEstreno
+) => {
+  // Ejecutamos la inserción utilizando parámetros (?).
+  //
+  // Esto evita concatenar directamente información
+  // recibida desde el usuario dentro del SQL.
+  const [result] = await pool.query(
+    `
+      INSERT INTO peliculas (
+        titulo,
+        sinopsis,
+        duracion,
+        genero,
+        director,
+        poster,
+        fecha_estreno
+      )
+      VALUES (?, ?, ?, ?, ?, ?, ?)
+    `,
+    [
+      titulo,
+      sinopsis,
+      duracion,
+      genero,
+      director,
+      poster,
+      fechaEstreno
+    ]
+  );
+
+  // insertId contiene el identificador generado
+  // automáticamente por MySQL.
+  return result.insertId;
+};
+
+// =====================================================
+// ACTUALIZAR PELÍCULA
+// =====================================================
+
+// Esta función actualiza todos los datos editables
+// de una película existente.
+//
+// El controlador será responsable de validar los datos
+// antes de llamar a este servicio.
+const actualizarPelicula = async (
+  id,
+  titulo,
+  sinopsis,
+  duracion,
+  genero,
+  director,
+  poster,
+  fechaEstreno
+) => {
+  const [result] = await pool.query(
+    `
+      UPDATE peliculas
+      SET
+        titulo = ?,
+        sinopsis = ?,
+        duracion = ?,
+        genero = ?,
+        director = ?,
+        poster = ?,
+        fecha_estreno = ?
+      WHERE id = ?
+    `,
+    [
+      titulo,
+      sinopsis,
+      duracion,
+      genero,
+      director,
+      poster,
+      fechaEstreno,
+      id
+    ]
+  );
+
+  // affectedRows indica cuántas filas fueron
+  // encontradas y procesadas por MySQL.
+  return result.affectedRows;
+};
+
+// =====================================================
+// ELIMINAR PELÍCULA
+// =====================================================
+
+// Esta función elimina una película utilizando
+// su identificador.
+//
+// Antes de llegar aquí, el controlador comprobará
+// que la película realmente exista.
+const eliminarPelicula = async (id) => {
+  const [result] = await pool.query(
+    `
+      DELETE FROM peliculas
+      WHERE id = ?
+    `,
+    [id]
+  );
+
+  // affectedRows nos permite saber cuántas filas
+  // fueron eliminadas por MySQL.
+  return result.affectedRows;
+};
+
+// =====================================================
 // EXPORTACIÓN DEL SERVICIO
 // =====================================================
 
-// Exportamos las funciones para poder utilizarlas
-// desde pelicula.controller.js.
 module.exports = {
   obtenerPeliculas,
-  obtenerPeliculaPorId
+  obtenerPeliculaPorId,
+  crearPelicula,
+  actualizarPelicula,
+  eliminarPelicula
 };
