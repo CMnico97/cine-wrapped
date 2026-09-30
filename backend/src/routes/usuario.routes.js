@@ -16,6 +16,11 @@ const {
   verificarToken
 } = require('../middleware/auth.middleware');
 
+// Importamos el controlador encargado
+// de generar las estadísticas de Cine Wrapped.
+const {
+  obtenerWrapped
+} = require('../controllers/wrapped.controller');
 
 // =====================================================
 // CREACIÓN DEL ROUTER
@@ -46,6 +51,24 @@ router.get(
   listarEntradasUsuario
 );
 
+// =====================================================
+// CINE WRAPPED DEL USUARIO
+// =====================================================
+
+// Ruta:
+//
+// GET /usuarios/me/wrapped
+//
+// Esta ruta también está protegida mediante JWT.
+//
+// El usuario no envía su identificador.
+// verificarToken obtiene el usuario directamente
+// desde el token de autenticación.
+router.get(
+  '/me/wrapped',
+  verificarToken,
+  obtenerWrapped
+);
 
 // =====================================================
 // EXPORTACIÓN DEL ROUTER
