@@ -1,18 +1,18 @@
 // Importamos Express para crear nuestro Router.
-const express = require('express');
+const express = require("express");
 
 // Importamos los controladores relacionados
 // con las películas.
 const {
   listarPeliculas,
-  obtenerDetallePelicula
-} = require('../controllers/pelicula.controller');
+  obtenerDetallePelicula,
+} = require("../controllers/pelicula.controller");
 
 // Importamos el controlador encargado de obtener
 // las funciones correspondientes a una película.
 const {
-  listarFuncionesPorPelicula
-} = require('../controllers/funcion.controller');
+  listarFuncionesPorPelicula,
+} = require("../controllers/funcion.controller");
 
 // =====================================================
 // CREACIÓN DEL ROUTER
@@ -21,7 +21,6 @@ const {
 // Creamos un router específico para las rutas
 // relacionadas con películas.
 const router = express.Router();
-
 
 // =====================================================
 // LISTAR PELÍCULAS
@@ -36,8 +35,7 @@ const router = express.Router();
 // la ruta final será:
 //
 // GET /peliculas
-router.get('/', listarPeliculas);
-
+router.get("/", listarPeliculas);
 
 // =====================================================
 // OBTENER DETALLE DE UNA PELÍCULA
@@ -53,7 +51,7 @@ router.get('/', listarPeliculas);
 // En ese caso:
 //
 // req.params.id = "1"
-router.get('/:id', obtenerDetallePelicula);
+router.get("/:id", obtenerDetallePelicula);
 
 // =====================================================
 // LISTAR FUNCIONES DE UNA PELÍCULA
@@ -65,10 +63,7 @@ router.get('/:id', obtenerDetallePelicula);
 // Por ejemplo:
 //
 // GET /peliculas/1/funciones
-router.get(
-  '/:id/funciones',
-  listarFuncionesPorPelicula
-);
+router.get("/:id/funciones", listarFuncionesPorPelicula);
 
 // =====================================================
 // EXPORTACIÓN DEL ROUTER

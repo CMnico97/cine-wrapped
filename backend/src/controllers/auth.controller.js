@@ -1,18 +1,18 @@
 // Importamos bcrypt para generar y comparar
 // hashes de contraseñas.
-const bcrypt = require('bcrypt');
+const bcrypt = require("bcrypt");
 
 // Importamos jsonwebtoken para generar tokens JWT
 // cuando un usuario inicia sesión correctamente.
-const jwt = require('jsonwebtoken');
+const jwt = require("jsonwebtoken");
 
 // Importamos las funciones relacionadas con usuarios
 // desde nuestro servicio de autenticación.
 const {
   buscarUsuarioPorEmail,
-  crearUsuario
-} = require('../services/auth.service');
-
+  crearUsuario,
+  obtenerUsuarioPorId,
+} = require("../services/auth.service");
 
 // =====================================================
 // REGISTRO DE USUARIOS
@@ -27,7 +27,6 @@ const register = async (req, res) => {
     // de la petición HTTP.
     const { nombre, email, password } = req.body;
 
-
     // =================================================
     // VALIDACIÓN DE CAMPOS OBLIGATORIOS
     // =================================================
@@ -37,10 +36,9 @@ const register = async (req, res) => {
     if (!nombre || !email || !password) {
       return res.status(400).json({
         ok: false,
-        message: 'Nombre, email y contraseña son obligatorios'
+        message: "Nombre, email y contraseña son obligatorios",
       });
     }
-
 
     // =================================================
     // VALIDACIÓN BÁSICA DE CONTRASEÑA
@@ -51,10 +49,9 @@ const register = async (req, res) => {
     if (password.length < 6) {
       return res.status(400).json({
         ok: false,
-        message: 'La contraseña debe tener al menos 6 caracteres'
+        message: "La contraseña debe tener al menos 6 caracteres",
       });
     }
-
 
     // =================================================
     // NORMALIZAR EMAIL
@@ -64,26 +61,22 @@ const register = async (req, res) => {
     // el correo electrónico a minúsculas.
     const emailNormalizado = email.trim().toLowerCase();
 
-
     // =================================================
     // COMPROBAR EMAIL
     // =================================================
 
     // Buscamos si ya existe un usuario registrado
     // con el mismo correo electrónico.
-    const usuarioExistente = await buscarUsuarioPorEmail(
-      emailNormalizado
-    );
+    const usuarioExistente = await buscarUsuarioPorEmail(emailNormalizado);
 
     // Si encontramos un usuario, rechazamos
     // el nuevo registro.
     if (usuarioExistente) {
       return res.status(409).json({
         ok: false,
-        message: 'El email ya se encuentra registrado'
+        message: "El email ya se encuentra registrado",
       });
     }
-
 
     // =================================================
     // HASH DE LA CONTRASEÑA
@@ -94,11 +87,7 @@ const register = async (req, res) => {
     //
     // El número 10 representa el costo utilizado
     // para generar el hash.
-    const passwordHash = await bcrypt.hash(
-      password,
-      10
-    );
-
+    const passwordHash = await bcrypt.hash(password, 10);
 
     // =================================================
     // CREAR USUARIO
@@ -111,9 +100,8 @@ const register = async (req, res) => {
     const usuarioId = await crearUsuario(
       nombre.trim(),
       emailNormalizado,
-      passwordHash
+      passwordHash,
     );
-
 
     // =================================================
     // RESPUESTA
@@ -123,31 +111,26 @@ const register = async (req, res) => {
     // creado correctamente.
     return res.status(201).json({
       ok: true,
-      message: 'Usuario registrado correctamente',
+      message: "Usuario registrado correctamente",
 
       usuario: {
         id: usuarioId,
         nombre: nombre.trim(),
         email: emailNormalizado,
-        rol: 'usuario'
-      }
+        rol: "usuario",
+      },
     });
-
   } catch (error) {
     // Mostramos el error en la terminal del backend.
-    console.error(
-      'Error al registrar usuario:',
-      error.message
-    );
+    console.error("Error al registrar usuario:", error.message);
 
     // Enviamos una respuesta genérica al cliente.
     return res.status(500).json({
       ok: false,
-      message: 'Error interno del servidor'
+      message: "Error interno del servidor",
     });
   }
 };
-
 
 // =====================================================
 // INICIO DE SESIÓN
@@ -169,7 +152,6 @@ const login = async (req, res) => {
     // de la petición HTTP.
     const { email, password } = req.body;
 
-
     // =================================================
     // VALIDACIÓN DE CAMPOS OBLIGATORIOS
     // =================================================
@@ -178,10 +160,9 @@ const login = async (req, res) => {
     if (!email || !password) {
       return res.status(400).json({
         ok: false,
-        message: 'Email y contraseña son obligatorios'
+        message: "Email y contraseña son obligatorios",
       });
     }
-
 
     // =================================================
     // NORMALIZAR EMAIL
@@ -191,16 +172,13 @@ const login = async (req, res) => {
     // el correo electrónico a minúsculas.
     const emailNormalizado = email.trim().toLowerCase();
 
-
     // =================================================
     // BUSCAR USUARIO
     // =================================================
 
     // Consultamos MySQL para comprobar si existe
     // una cuenta asociada al correo recibido.
-    const usuario = await buscarUsuarioPorEmail(
-      emailNormalizado
-    );
+    const usuario = await buscarUsuarioPorEmail(emailNormalizado);
 
     // Si el usuario no existe, rechazamos el login.
     //
@@ -209,10 +187,9 @@ const login = async (req, res) => {
     if (!usuario) {
       return res.status(401).json({
         ok: false,
-        message: 'Email o contraseña incorrectos'
+        message: "Email o contraseña incorrectos",
       });
     }
-
 
     // =================================================
     // COMPROBAR CONTRASEÑA
@@ -220,20 +197,16 @@ const login = async (req, res) => {
 
     // Comparamos la contraseña recibida con el hash
     // almacenado en la base de datos.
-    const passwordCorrecta = await bcrypt.compare(
-      password,
-      usuario.password
-    );
+    const passwordCorrecta = await bcrypt.compare(password, usuario.password);
 
     // Si bcrypt determina que no corresponden,
     // rechazamos el inicio de sesión.
     if (!passwordCorrecta) {
       return res.status(401).json({
         ok: false,
-        message: 'Email o contraseña incorrectos'
+        message: "Email o contraseña incorrectos",
       });
     }
-
 
     // =================================================
     // GENERAR TOKEN JWT
@@ -251,7 +224,7 @@ const login = async (req, res) => {
     const token = jwt.sign(
       {
         id: usuario.id,
-        rol: usuario.rol
+        rol: usuario.rol,
       },
 
       // Clave secreta almacenada en nuestro archivo .env.
@@ -262,10 +235,9 @@ const login = async (req, res) => {
         //
         // Si JWT_EXPIRES_IN no existe en .env,
         // utilizamos 2 horas como valor predeterminado.
-        expiresIn: process.env.JWT_EXPIRES_IN || '2h'
-      }
+        expiresIn: process.env.JWT_EXPIRES_IN || "2h",
+      },
     );
-
 
     // =================================================
     // RESPUESTA
@@ -278,41 +250,86 @@ const login = async (req, res) => {
     // 3. El token fue generado correctamente.
     return res.status(200).json({
       ok: true,
-      message: 'Inicio de sesión correcto',
+      message: "Inicio de sesión correcto",
 
       usuario: {
         id: usuario.id,
         nombre: usuario.nombre,
         email: usuario.email,
-        rol: usuario.rol
+        rol: usuario.rol,
       },
 
-      token
+      token,
     });
-
   } catch (error) {
     // Mostramos el error en la terminal del backend.
-    console.error(
-      'Error al iniciar sesión:',
-      error.message
-    );
+    console.error("Error al iniciar sesión:", error.message);
 
     // Enviamos una respuesta genérica al cliente.
     return res.status(500).json({
       ok: false,
-      message: 'Error interno del servidor'
+      message: "Error interno del servidor",
     });
   }
 };
 
+// =====================================================
+// OBTENER PERFIL DEL USUARIO
+// =====================================================
+
+// Esta función será ejecutada cuando recibamos:
+//
+// GET /auth/me
+const obtenerPerfil = async (req, res) => {
+  try {
+    // Obtenemos el id del usuario que fue
+    // extraído previamente desde el JWT.
+    const usuarioId = req.usuario.id;
+
+    // Consultamos los datos actualizados
+    // del usuario en MySQL.
+    const usuario = await obtenerUsuarioPorId(usuarioId);
+
+    // Si el usuario ya no existe,
+    // devolvemos un error 404.
+    if (!usuario) {
+      return res.status(404).json({
+        ok: false,
+        message: "Usuario no encontrado",
+      });
+    }
+
+    // Devolvemos solamente información pública.
+    // Nunca devolvemos la contraseña.
+    return res.status(200).json({
+      ok: true,
+
+      usuario: {
+        id: usuario.id,
+        nombre: usuario.nombre,
+        email: usuario.email,
+        rol: usuario.rol,
+        fecha_registro: usuario.fecha_registro,
+      },
+    });
+  } catch (error) {
+    // Mostramos el error en la terminal
+    // para facilitar la depuración.
+    console.error("Error al obtener perfil:", error.message);
+
+    return res.status(500).json({
+      ok: false,
+      message: "Error interno del servidor",
+    });
+  }
+};
 
 // =====================================================
 // EXPORTACIÓN DE CONTROLADORES
 // =====================================================
 
-// Exportamos ambos controladores para que puedan
-// utilizarse desde auth.routes.js.
 module.exports = {
   register,
-  login
+  login,
+  obtenerPerfil,
 };

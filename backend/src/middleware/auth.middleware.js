@@ -1,7 +1,6 @@
 // Importamos jsonwebtoken para poder verificar
 // los tokens enviados por los usuarios.
-const jwt = require('jsonwebtoken');
-
+const jwt = require("jsonwebtoken");
 
 // =====================================================
 // MIDDLEWARE DE AUTENTICACIÓN
@@ -24,7 +23,6 @@ const verificarToken = (req, res, next) => {
     // Authorization: Bearer eyJhbGciOiJIUzI1Ni...
     const authorization = req.headers.authorization;
 
-
     // =================================================
     // COMPROBAR QUE EXISTE EL TOKEN
     // =================================================
@@ -34,10 +32,9 @@ const verificarToken = (req, res, next) => {
     if (!authorization) {
       return res.status(401).json({
         ok: false,
-        message: 'Token de autenticación requerido'
+        message: "Token de autenticación requerido",
       });
     }
-
 
     // =================================================
     // COMPROBAR FORMATO BEARER
@@ -52,24 +49,19 @@ const verificarToken = (req, res, next) => {
     // se transforma en:
     //
     // ["Bearer", "abc123"]
-    const partes = authorization.split(' ');
+    const partes = authorization.split(" ");
 
     // Comprobamos que el encabezado tenga exactamente
     // las dos partes esperadas y utilice Bearer.
-    if (
-      partes.length !== 2 ||
-      partes[0] !== 'Bearer'
-    ) {
+    if (partes.length !== 2 || partes[0] !== "Bearer") {
       return res.status(401).json({
         ok: false,
-        message: 'Formato de token inválido'
+        message: "Formato de token inválido",
       });
     }
 
-
     // La segunda parte contiene el JWT.
     const token = partes[1];
-
 
     // =================================================
     // VERIFICAR JWT
@@ -83,11 +75,7 @@ const verificarToken = (req, res, next) => {
     //
     // Si algo no es válido, jwt.verify() genera un error
     // que será capturado por nuestro catch.
-    const datosToken = jwt.verify(
-      token,
-      process.env.JWT_SECRET
-    );
-
+    const datosToken = jwt.verify(token, process.env.JWT_SECRET);
 
     // =================================================
     // GUARDAR USUARIO EN LA PETICIÓN
@@ -109,9 +97,8 @@ const verificarToken = (req, res, next) => {
     // req.usuario.rol
     req.usuario = {
       id: datosToken.id,
-      rol: datosToken.rol
+      rol: datosToken.rol,
     };
-
 
     // =================================================
     // CONTINUAR
@@ -122,13 +109,12 @@ const verificarToken = (req, res, next) => {
     // next() permite que Express continúe ejecutando
     // el siguiente controlador de la ruta.
     next();
-
   } catch (error) {
     // Si el JWT es inválido, fue alterado o expiró,
     // rechazamos la petición.
     return res.status(401).json({
       ok: false,
-      message: 'Token inválido o expirado'
+      message: "Token inválido o expirado",
     });
   }
 };
@@ -157,10 +143,9 @@ const verificarAdmin = (req, res, next) => {
   if (!req.usuario) {
     return res.status(401).json({
       ok: false,
-      message: 'Usuario no autenticado'
+      message: "Usuario no autenticado",
     });
   }
-
 
   // ===================================================
   // COMPROBAR ROL
@@ -168,14 +153,12 @@ const verificarAdmin = (req, res, next) => {
 
   // Si el usuario no tiene rol de administrador,
   // rechazamos el acceso.
-  if (req.usuario.rol !== 'admin') {
+  if (req.usuario.rol !== "admin") {
     return res.status(403).json({
       ok: false,
-      message:
-        'No tiene permisos para realizar esta operación'
+      message: "No tiene permisos para realizar esta operación",
     });
   }
-
 
   // ===================================================
   // ACCESO AUTORIZADO
@@ -197,5 +180,5 @@ const verificarAdmin = (req, res, next) => {
 
 module.exports = {
   verificarToken,
-  verificarAdmin
+  verificarAdmin,
 };

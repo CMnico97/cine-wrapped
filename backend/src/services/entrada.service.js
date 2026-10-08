@@ -2,15 +2,14 @@
 //
 // Lo utilizaremos para generar un identificador
 // aleatorio para el código de cada entrada.
-const crypto = require('crypto');
+const crypto = require("crypto");
 
 // Importamos el pool de conexiones a MySQL.
 //
 // Además de ejecutar consultas normales,
 // utilizaremos este pool para obtener una conexión
 // exclusiva durante la transacción.
-const pool = require('../config/database');
-
+const pool = require("../config/database");
 
 // =====================================================
 // OBTENER ASIENTOS POR IDS
@@ -29,12 +28,11 @@ const obtenerAsientosPorIds = async (asientosIds) => {
       FROM asientos
       WHERE id IN (?)
     `,
-    [asientosIds]
+    [asientosIds],
   );
 
   return rows;
 };
-
 
 // =====================================================
 // OBTENER ASIENTOS OCUPADOS
@@ -42,10 +40,7 @@ const obtenerAsientosPorIds = async (asientosIds) => {
 
 // Comprueba cuáles de los asientos seleccionados
 // ya están asociados a una entrada para la función.
-const obtenerAsientosOcupados = async (
-  funcionId,
-  asientosIds
-) => {
+const obtenerAsientosOcupados = async (funcionId, asientosIds) => {
   const [rows] = await pool.query(
     `
       SELECT
@@ -54,12 +49,11 @@ const obtenerAsientosOcupados = async (
       WHERE funcion_id = ?
         AND asiento_id IN (?)
     `,
-    [funcionId, asientosIds]
+    [funcionId, asientosIds],
   );
 
   return rows;
 };
-
 
 // =====================================================
 // CREAR ENTRADA CON TRANSACCIÓN
@@ -73,11 +67,7 @@ const obtenerAsientosOcupados = async (
 // usuarioId  → usuario autenticado.
 // funcionId  → función seleccionada.
 // asientosIds → asientos seleccionados.
-const crearEntrada = async (
-  usuarioId,
-  funcionId,
-  asientosIds
-) => {
+const crearEntrada = async (usuarioId, funcionId, asientosIds) => {
   // Obtenemos una conexión específica del pool.
   //
   // Todas las operaciones de la transacción deben
@@ -90,7 +80,6 @@ const crearEntrada = async (
     // =================================================
 
     await connection.beginTransaction();
-
 
     // =================================================
     // COMPROBAR DISPONIBILIDAD NUEVAMENTE
@@ -110,23 +99,22 @@ const crearEntrada = async (
           AND asiento_id IN (?)
         FOR UPDATE
       `,
-      [funcionId, asientosIds]
+      [funcionId, asientosIds],
     );
 
     // Si encontramos algún asiento ocupado,
     // cancelamos la operación.
     if (asientosOcupados.length > 0) {
       const error = new Error(
-        'Uno o más asientos seleccionados ya están ocupados'
+        "Uno o más asientos seleccionados ya están ocupados",
       );
 
       // Guardamos un código para que el controlador
       // pueda reconocer este error de negocio.
-      error.code = 'ASIENTO_OCUPADO';
+      error.code = "ASIENTO_OCUPADO";
 
       throw error;
     }
-
 
     // =================================================
     // GENERAR CÓDIGO DE ENTRADA
@@ -139,7 +127,6 @@ const crearEntrada = async (
     //
     // CINE-550e8400-e29b-41d4-a716-446655440000
     const codigo = `CINE-${crypto.randomUUID()}`;
-
 
     // =================================================
     // CREAR ENTRADA
@@ -159,17 +146,12 @@ const crearEntrada = async (
         )
         VALUES (?, ?, ?, 'confirmada')
       `,
-      [
-        usuarioId,
-        funcionId,
-        codigo
-      ]
+      [usuarioId, funcionId, codigo],
     );
 
     // MySQL devuelve el identificador generado
     // automáticamente mediante AUTO_INCREMENT.
     const entradaId = resultadoEntrada.insertId;
-
 
     // =================================================
     // ASOCIAR ASIENTOS A LA ENTRADA
@@ -188,13 +170,11 @@ const crearEntrada = async (
     // donde cada elemento representa:
     //
     // [entrada_id, funcion_id, asiento_id]
-    const valoresAsientos = asientosIds.map(
-      (asientoId) => [
-        entradaId,
-        funcionId,
-        asientoId
-      ]
-    );
+    const valoresAsientos = asientosIds.map((asientoId) => [
+      entradaId,
+      funcionId,
+      asientoId,
+    ]);
 
     // Insertamos todos los asientos seleccionados
     // en una sola consulta.
@@ -207,9 +187,8 @@ const crearEntrada = async (
         )
         VALUES ?
       `,
-      [valoresAsientos]
+      [valoresAsientos],
     );
-
 
     // =================================================
     // CONFIRMAR TRANSACCIÓN
@@ -221,7 +200,6 @@ const crearEntrada = async (
     // COMMIT hace permanentes los cambios.
     await connection.commit();
 
-
     // =================================================
     // DEVOLVER RESULTADO
     // =====================================================
@@ -231,10 +209,9 @@ const crearEntrada = async (
       usuario_id: usuarioId,
       funcion_id: funcionId,
       codigo,
-      estado: 'confirmada',
-      asientos: asientosIds
+      estado: "confirmada",
+      asientos: asientosIds,
     };
-
   } catch (error) {
     // =================================================
     // CANCELAR TRANSACCIÓN
@@ -247,7 +224,6 @@ const crearEntrada = async (
     // Volvemos a lanzar el error para que pueda
     // manejarlo el controlador.
     throw error;
-
   } finally {
     // =================================================
     // LIBERAR CONEXIÓN
@@ -319,7 +295,7 @@ const obtenerEntradasPorUsuario = async (usuarioId) => {
         a.fila ASC,
         a.numero ASC
     `,
-    [usuarioId]
+    [usuarioId],
   );
 
   return rows;
@@ -337,5 +313,5 @@ module.exports = {
   obtenerAsientosPorIds,
   obtenerAsientosOcupados,
   crearEntrada,
-  obtenerEntradasPorUsuario
+  obtenerEntradasPorUsuario,
 };

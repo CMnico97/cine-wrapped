@@ -1,9 +1,9 @@
 // Importamos mysql2 utilizando su versión basada en promesas.
 // Esto permite utilizar async/await cuando hagamos consultas a MySQL.
-const mysql = require('mysql2/promise');
+const mysql = require("mysql2/promise");
 
 // Cargamos las variables de entorno definidas en el archivo .env.
-require('dotenv').config();
+require("dotenv").config();
 
 // Creamos un pool de conexiones.
 //
@@ -34,7 +34,7 @@ const pool = mysql.createPool({
 
   // 0 significa que no establecemos un límite de consultas
   // esperando por una conexión disponible.
-  queueLimit: 0
+  queueLimit: 0,
 });
 
 // Exportamos el pool para poder utilizarlo posteriormente

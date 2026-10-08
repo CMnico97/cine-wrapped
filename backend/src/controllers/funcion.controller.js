@@ -3,18 +3,15 @@
 const {
   obtenerFuncionesPorPelicula,
   obtenerFuncionPorId,
-  obtenerAsientosPorFuncion
-} = require('../services/funcion.service');
-
+  obtenerAsientosPorFuncion,
+} = require("../services/funcion.service");
 
 // Importamos el servicio que permite buscar
 // una película utilizando su identificador.
 //
 // Lo necesitamos para comprobar que una película
 // exista antes de consultar sus funciones.
-const {
-  obtenerPeliculaPorId
-} = require('../services/pelicula.service');
+const { obtenerPeliculaPorId } = require("../services/pelicula.service");
 
 // =====================================================
 // LISTAR FUNCIONES DE UNA PELÍCULA
@@ -38,57 +35,46 @@ const listarFuncionesPorPelicula = async (req, res) => {
     const peliculaId = Number(id);
 
     // Validamos que sea un número entero positivo.
-    if (
-      !Number.isInteger(peliculaId) ||
-      peliculaId <= 0
-    ) {
+    if (!Number.isInteger(peliculaId) || peliculaId <= 0) {
       return res.status(400).json({
         ok: false,
-        message: 'El id de la película no es válido'
+        message: "El id de la película no es válido",
       });
     }
 
     // Primero comprobamos que la película exista.
-    const pelicula = await obtenerPeliculaPorId(
-      peliculaId
-    );
+    const pelicula = await obtenerPeliculaPorId(peliculaId);
 
     // Si no existe, devolvemos HTTP 404.
     if (!pelicula) {
       return res.status(404).json({
         ok: false,
-        message: 'Película no encontrada'
+        message: "Película no encontrada",
       });
     }
 
     // Si la película existe, obtenemos
     // todas sus funciones.
-    const funciones = await obtenerFuncionesPorPelicula(
-      peliculaId
-    );
+    const funciones = await obtenerFuncionesPorPelicula(peliculaId);
 
     // Respondemos con la información obtenida.
     return res.status(200).json({
       ok: true,
       pelicula: {
         id: pelicula.id,
-        titulo: pelicula.titulo
+        titulo: pelicula.titulo,
       },
-      funciones
+      funciones,
     });
-
   } catch (error) {
     // Mostramos el error técnico únicamente
     // en la terminal del backend.
-    console.error(
-      'Error al obtener las funciones:',
-      error.message
-    );
+    console.error("Error al obtener las funciones:", error.message);
 
     // Enviamos una respuesta genérica al cliente.
     return res.status(500).json({
       ok: false,
-      message: 'Error interno del servidor'
+      message: "Error interno del servidor",
     });
   }
 };
@@ -114,27 +100,22 @@ const listarAsientosPorFuncion = async (req, res) => {
 
     // Validamos que el identificador sea
     // un número entero positivo.
-    if (
-      !Number.isInteger(funcionId) ||
-      funcionId <= 0
-    ) {
+    if (!Number.isInteger(funcionId) || funcionId <= 0) {
       return res.status(400).json({
         ok: false,
-        message: 'El id de la función no es válido'
+        message: "El id de la función no es válido",
       });
     }
 
     // Comprobamos que la función realmente exista.
-    const funcion = await obtenerFuncionPorId(
-      funcionId
-    );
+    const funcion = await obtenerFuncionPorId(funcionId);
 
     // Si no encontramos la función,
     // respondemos con HTTP 404.
     if (!funcion) {
       return res.status(404).json({
         ok: false,
-        message: 'Función no encontrada'
+        message: "Función no encontrada",
       });
     }
 
@@ -143,10 +124,7 @@ const listarAsientosPorFuncion = async (req, res) => {
     //
     // También calcularemos su disponibilidad
     // específicamente para esta función.
-    const asientos = await obtenerAsientosPorFuncion(
-      funcion.id,
-      funcion.sala
-    );
+    const asientos = await obtenerAsientosPorFuncion(funcion.id, funcion.sala);
 
     // Respondemos con información básica de la función
     // y todos sus asientos.
@@ -157,24 +135,23 @@ const listarAsientosPorFuncion = async (req, res) => {
         pelicula_id: funcion.pelicula_id,
         fecha: funcion.fecha,
         hora: funcion.hora,
-        sala: funcion.sala
+        sala: funcion.sala,
       },
-      asientos
+      asientos,
     });
-
   } catch (error) {
     // Mostramos el error técnico en la terminal
     // para facilitar la depuración.
     console.error(
-      'Error al obtener los asientos de la función:',
-      error.message
+      "Error al obtener los asientos de la función:",
+      error.message,
     );
 
     // Al cliente enviamos solamente
     // un mensaje genérico.
     return res.status(500).json({
       ok: false,
-      message: 'Error interno del servidor'
+      message: "Error interno del servidor",
     });
   }
 };
@@ -187,5 +164,5 @@ const listarAsientosPorFuncion = async (req, res) => {
 // desde nuestras rutas.
 module.exports = {
   listarFuncionesPorPelicula,
-  listarAsientosPorFuncion
+  listarAsientosPorFuncion,
 };

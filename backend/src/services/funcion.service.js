@@ -3,8 +3,7 @@
 // Este servicio será responsable de realizar
 // las consultas relacionadas con las funciones
 // disponibles en el cine.
-const pool = require('../config/database');
-
+const pool = require("../config/database");
 
 // =====================================================
 // OBTENER FUNCIONES POR PELÍCULA
@@ -32,7 +31,7 @@ const obtenerFuncionesPorPelicula = async (peliculaId) => {
       WHERE pelicula_id = ?
       ORDER BY fecha ASC, hora ASC
     `,
-    [peliculaId]
+    [peliculaId],
   );
 
   // Devolvemos todas las funciones encontradas.
@@ -64,7 +63,7 @@ const obtenerFuncionPorId = async (id) => {
       FROM funciones
       WHERE id = ?
     `,
-    [id]
+    [id],
   );
 
   // Como id es una clave primaria, solamente puede
@@ -73,7 +72,6 @@ const obtenerFuncionPorId = async (id) => {
   // Si no existe, rows[0] será undefined.
   return rows[0];
 };
-
 
 // =====================================================
 // OBTENER ASIENTOS DE UNA FUNCIÓN
@@ -84,10 +82,7 @@ const obtenerFuncionPorId = async (id) => {
 //
 // Además calcula si cada asiento se encuentra
 // disponible u ocupado para ESA función.
-const obtenerAsientosPorFuncion = async (
-  funcionId,
-  sala
-) => {
+const obtenerAsientosPorFuncion = async (funcionId, sala) => {
   // Obtenemos los asientos de la sala correspondiente.
   //
   // LEFT JOIN nos permite conservar también los asientos
@@ -114,7 +109,7 @@ const obtenerAsientosPorFuncion = async (
       WHERE a.sala = ?
       ORDER BY a.fila ASC, a.numero ASC
     `,
-    [funcionId, sala]
+    [funcionId, sala],
   );
 
   // Devolvemos todos los asientos con
@@ -138,12 +133,7 @@ const obtenerAsientosPorFuncion = async (
 //
 // El controlador será responsable de validar
 // estos datos antes de llamar al servicio.
-const crearFuncion = async (
-  peliculaId,
-  fecha,
-  hora,
-  sala
-) => {
+const crearFuncion = async (peliculaId, fecha, hora, sala) => {
   const [result] = await pool.query(
     `
       INSERT INTO funciones (
@@ -154,12 +144,7 @@ const crearFuncion = async (
       )
       VALUES (?, ?, ?, ?)
     `,
-    [
-      peliculaId,
-      fecha,
-      hora,
-      sala
-    ]
+    [peliculaId, fecha, hora, sala],
   );
 
   // MySQL genera automáticamente el identificador
@@ -181,13 +166,7 @@ const crearFuncion = async (
 // - fecha: fecha de la función.
 // - hora: horario de la función.
 // - sala: número de sala.
-const actualizarFuncion = async (
-  id,
-  peliculaId,
-  fecha,
-  hora,
-  sala
-) => {
+const actualizarFuncion = async (id, peliculaId, fecha, hora, sala) => {
   const [result] = await pool.query(
     `
       UPDATE funciones
@@ -198,13 +177,7 @@ const actualizarFuncion = async (
         sala = ?
       WHERE id = ?
     `,
-    [
-      peliculaId,
-      fecha,
-      hora,
-      sala,
-      id
-    ]
+    [peliculaId, fecha, hora, sala, id],
   );
 
   // Devolvemos la cantidad de filas afectadas
@@ -227,7 +200,7 @@ const eliminarFuncion = async (id) => {
       DELETE FROM funciones
       WHERE id = ?
     `,
-    [id]
+    [id],
   );
 
   // Devolvemos la cantidad de filas eliminadas.
@@ -244,5 +217,5 @@ module.exports = {
   obtenerAsientosPorFuncion,
   crearFuncion,
   actualizarFuncion,
-  eliminarFuncion
+  eliminarFuncion,
 };

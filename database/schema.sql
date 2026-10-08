@@ -1,16 +1,4 @@
 -- =====================================================
--- CINE WRAPPED
--- Script de creación de la base de datos
--- =====================================================
-
-CREATE DATABASE IF NOT EXISTS cine_db
-    CHARACTER SET utf8mb4
-    COLLATE utf8mb4_unicode_ci;
-
-USE cine_db;
-
-
--- =====================================================
 -- TABLA: usuarios
 -- =====================================================
 

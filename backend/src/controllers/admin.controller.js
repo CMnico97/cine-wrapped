@@ -4,8 +4,8 @@ const {
   crearPelicula: crearPeliculaService,
   obtenerPeliculaPorId,
   actualizarPelicula: actualizarPeliculaService,
-  eliminarPelicula: eliminarPeliculaService
-} = require('../services/pelicula.service');
+  eliminarPelicula: eliminarPeliculaService,
+} = require("../services/pelicula.service");
 
 // Importamos los servicios necesarios para
 // administrar las funciones del cine.
@@ -13,8 +13,8 @@ const {
   crearFuncion: crearFuncionService,
   obtenerFuncionPorId,
   actualizarFuncion: actualizarFuncionService,
-  eliminarFuncion: eliminarFuncionService
-} = require('../services/funcion.service');
+  eliminarFuncion: eliminarFuncionService,
+} = require("../services/funcion.service");
 
 // =====================================================
 // CREAR PELÍCULA
@@ -38,9 +38,8 @@ const crearPelicula = async (req, res) => {
       genero,
       director,
       poster,
-      fecha_estreno
+      fecha_estreno,
     } = req.body;
-
 
     // =================================================
     // VALIDAR CAMPOS OBLIGATORIOS
@@ -58,10 +57,9 @@ const crearPelicula = async (req, res) => {
     ) {
       return res.status(400).json({
         ok: false,
-        message: 'Faltan datos obligatorios de la película'
+        message: "Faltan datos obligatorios de la película",
       });
     }
-
 
     // =================================================
     // VALIDAR DURACIÓN
@@ -72,17 +70,12 @@ const crearPelicula = async (req, res) => {
     const duracionNumero = Number(duracion);
 
     // La duración debe ser un número entero positivo.
-    if (
-      !Number.isInteger(duracionNumero) ||
-      duracionNumero <= 0
-    ) {
+    if (!Number.isInteger(duracionNumero) || duracionNumero <= 0) {
       return res.status(400).json({
         ok: false,
-        message:
-          'La duración debe ser un número entero mayor que 0'
+        message: "La duración debe ser un número entero mayor que 0",
       });
     }
-
 
     // =================================================
     // CREAR PELÍCULA
@@ -98,9 +91,8 @@ const crearPelicula = async (req, res) => {
       genero.trim(),
       director.trim(),
       poster || null,
-      fecha_estreno || null
+      fecha_estreno || null,
     );
-
 
     // =================================================
     // RESPUESTA EXITOSA
@@ -108,7 +100,7 @@ const crearPelicula = async (req, res) => {
 
     return res.status(201).json({
       ok: true,
-      message: 'Película creada correctamente',
+      message: "Película creada correctamente",
       pelicula: {
         id: peliculaId,
         titulo: titulo.trim(),
@@ -117,21 +109,17 @@ const crearPelicula = async (req, res) => {
         genero: genero.trim(),
         director: director.trim(),
         poster: poster || null,
-        fecha_estreno: fecha_estreno || null
-      }
+        fecha_estreno: fecha_estreno || null,
+      },
     });
-
   } catch (error) {
     // Mostramos el error en la terminal para facilitar
     // la depuración durante el desarrollo.
-    console.error(
-      'Error al crear película:',
-      error.message
-    );
+    console.error("Error al crear película:", error.message);
 
     return res.status(500).json({
       ok: false,
-      message: 'Error interno del servidor'
+      message: "Error interno del servidor",
     });
   }
 };
@@ -151,36 +139,29 @@ const actualizarPelicula = async (req, res) => {
     // a un número.
     const peliculaId = Number(req.params.id);
 
-
     // =================================================
     // VALIDAR ID
     // =================================================
 
-    if (
-      !Number.isInteger(peliculaId) ||
-      peliculaId <= 0
-    ) {
+    if (!Number.isInteger(peliculaId) || peliculaId <= 0) {
       return res.status(400).json({
         ok: false,
-        message: 'El id de la película no es válido'
+        message: "El id de la película no es válido",
       });
     }
-
 
     // =================================================
     // COMPROBAR QUE LA PELÍCULA EXISTA
     // =================================================
 
-    const peliculaExistente =
-      await obtenerPeliculaPorId(peliculaId);
+    const peliculaExistente = await obtenerPeliculaPorId(peliculaId);
 
     if (!peliculaExistente) {
       return res.status(404).json({
         ok: false,
-        message: 'Película no encontrada'
+        message: "Película no encontrada",
       });
     }
-
 
     // =================================================
     // OBTENER DATOS
@@ -193,9 +174,8 @@ const actualizarPelicula = async (req, res) => {
       genero,
       director,
       poster,
-      fecha_estreno
+      fecha_estreno,
     } = req.body;
-
 
     // =================================================
     // VALIDAR CAMPOS OBLIGATORIOS
@@ -210,10 +190,9 @@ const actualizarPelicula = async (req, res) => {
     ) {
       return res.status(400).json({
         ok: false,
-        message: 'Faltan datos obligatorios de la película'
+        message: "Faltan datos obligatorios de la película",
       });
     }
-
 
     // =================================================
     // VALIDAR DURACIÓN
@@ -221,17 +200,12 @@ const actualizarPelicula = async (req, res) => {
 
     const duracionNumero = Number(duracion);
 
-    if (
-      !Number.isInteger(duracionNumero) ||
-      duracionNumero <= 0
-    ) {
+    if (!Number.isInteger(duracionNumero) || duracionNumero <= 0) {
       return res.status(400).json({
         ok: false,
-        message:
-          'La duración debe ser un número entero mayor que 0'
+        message: "La duración debe ser un número entero mayor que 0",
       });
     }
-
 
     // =================================================
     // ACTUALIZAR EN LA BASE DE DATOS
@@ -245,9 +219,8 @@ const actualizarPelicula = async (req, res) => {
       genero.trim(),
       director.trim(),
       poster || null,
-      fecha_estreno || null
+      fecha_estreno || null,
     );
-
 
     // =================================================
     // RESPUESTA EXITOSA
@@ -255,7 +228,7 @@ const actualizarPelicula = async (req, res) => {
 
     return res.status(200).json({
       ok: true,
-      message: 'Película actualizada correctamente',
+      message: "Película actualizada correctamente",
       pelicula: {
         id: peliculaId,
         titulo: titulo.trim(),
@@ -264,19 +237,15 @@ const actualizarPelicula = async (req, res) => {
         genero: genero.trim(),
         director: director.trim(),
         poster: poster || null,
-        fecha_estreno: fecha_estreno || null
-      }
+        fecha_estreno: fecha_estreno || null,
+      },
     });
-
   } catch (error) {
-    console.error(
-      'Error al actualizar película:',
-      error.message
-    );
+    console.error("Error al actualizar película:", error.message);
 
     return res.status(500).json({
       ok: false,
-      message: 'Error interno del servidor'
+      message: "Error interno del servidor",
     });
   }
 };
@@ -296,21 +265,16 @@ const eliminarPelicula = async (req, res) => {
     // y lo convertimos a número.
     const peliculaId = Number(req.params.id);
 
-
     // =================================================
     // VALIDAR ID
     // =================================================
 
-    if (
-      !Number.isInteger(peliculaId) ||
-      peliculaId <= 0
-    ) {
+    if (!Number.isInteger(peliculaId) || peliculaId <= 0) {
       return res.status(400).json({
         ok: false,
-        message: 'El id de la película no es válido'
+        message: "El id de la película no es válido",
       });
     }
-
 
     // =================================================
     // COMPROBAR EXISTENCIA
@@ -318,16 +282,14 @@ const eliminarPelicula = async (req, res) => {
 
     // Antes de intentar eliminar, comprobamos
     // que exista una película con ese identificador.
-    const peliculaExistente =
-      await obtenerPeliculaPorId(peliculaId);
+    const peliculaExistente = await obtenerPeliculaPorId(peliculaId);
 
     if (!peliculaExistente) {
       return res.status(404).json({
         ok: false,
-        message: 'Película no encontrada'
+        message: "Película no encontrada",
       });
     }
-
 
     // =================================================
     // ELIMINAR PELÍCULA
@@ -335,25 +297,20 @@ const eliminarPelicula = async (req, res) => {
 
     await eliminarPeliculaService(peliculaId);
 
-
     // =================================================
     // RESPUESTA EXITOSA
     // =================================================
 
     return res.status(200).json({
       ok: true,
-      message: 'Película eliminada correctamente'
+      message: "Película eliminada correctamente",
     });
-
   } catch (error) {
-    console.error(
-      'Error al eliminar película:',
-      error.message
-    );
+    console.error("Error al eliminar película:", error.message);
 
     return res.status(500).json({
       ok: false,
-      message: 'Error interno del servidor'
+      message: "Error interno del servidor",
     });
   }
 };
@@ -371,30 +328,18 @@ const eliminarPelicula = async (req, res) => {
 const crearFuncion = async (req, res) => {
   try {
     // Obtenemos los datos enviados por el administrador.
-    const {
-      pelicula_id,
-      fecha,
-      hora,
-      sala
-    } = req.body;
-
+    const { pelicula_id, fecha, hora, sala } = req.body;
 
     // =================================================
     // VALIDAR CAMPOS OBLIGATORIOS
     // =================================================
 
-    if (
-      pelicula_id === undefined ||
-      !fecha ||
-      !hora ||
-      sala === undefined
-    ) {
+    if (pelicula_id === undefined || !fecha || !hora || sala === undefined) {
       return res.status(400).json({
         ok: false,
-        message: 'Faltan datos obligatorios de la función'
+        message: "Faltan datos obligatorios de la función",
       });
     }
-
 
     // =================================================
     // VALIDAR PELÍCULA
@@ -404,16 +349,12 @@ const crearFuncion = async (req, res) => {
     // a un número.
     const peliculaId = Number(pelicula_id);
 
-    if (
-      !Number.isInteger(peliculaId) ||
-      peliculaId <= 0
-    ) {
+    if (!Number.isInteger(peliculaId) || peliculaId <= 0) {
       return res.status(400).json({
         ok: false,
-        message: 'El id de la película no es válido'
+        message: "El id de la película no es válido",
       });
     }
-
 
     // =================================================
     // COMPROBAR QUE LA PELÍCULA EXISTA
@@ -421,16 +362,14 @@ const crearFuncion = async (req, res) => {
 
     // Ya tenemos este servicio porque lo utilizamos
     // anteriormente en el CRUD de películas.
-    const pelicula =
-      await obtenerPeliculaPorId(peliculaId);
+    const pelicula = await obtenerPeliculaPorId(peliculaId);
 
     if (!pelicula) {
       return res.status(404).json({
         ok: false,
-        message: 'Película no encontrada'
+        message: "Película no encontrada",
       });
     }
-
 
     // =================================================
     // VALIDAR SALA
@@ -440,17 +379,12 @@ const crearFuncion = async (req, res) => {
     // simplemente mediante un número entero positivo.
     const salaNumero = Number(sala);
 
-    if (
-      !Number.isInteger(salaNumero) ||
-      salaNumero <= 0
-    ) {
+    if (!Number.isInteger(salaNumero) || salaNumero <= 0) {
       return res.status(400).json({
         ok: false,
-        message:
-          'La sala debe ser un número entero mayor que 0'
+        message: "La sala debe ser un número entero mayor que 0",
       });
     }
-
 
     // =================================================
     // VALIDAR FECHA
@@ -463,17 +397,14 @@ const crearFuncion = async (req, res) => {
     // Ejemplo:
     //
     // 2026-10-15
-    const formatoFecha =
-      /^\d{4}-\d{2}-\d{2}$/;
+    const formatoFecha = /^\d{4}-\d{2}-\d{2}$/;
 
     if (!formatoFecha.test(fecha)) {
       return res.status(400).json({
         ok: false,
-        message:
-          'La fecha debe tener formato YYYY-MM-DD'
+        message: "La fecha debe tener formato YYYY-MM-DD",
       });
     }
-
 
     // =================================================
     // VALIDAR HORA
@@ -489,17 +420,14 @@ const crearFuncion = async (req, res) => {
     //
     // y además limitamos las horas a 00-23
     // y los minutos/segundos a 00-59.
-    const formatoHora =
-      /^([01]\d|2[0-3]):[0-5]\d(:[0-5]\d)?$/;
+    const formatoHora = /^([01]\d|2[0-3]):[0-5]\d(:[0-5]\d)?$/;
 
     if (!formatoHora.test(hora)) {
       return res.status(400).json({
         ok: false,
-        message:
-          'La hora debe tener formato HH:MM o HH:MM:SS'
+        message: "La hora debe tener formato HH:MM o HH:MM:SS",
       });
     }
-
 
     // =================================================
     // CREAR FUNCIÓN
@@ -509,9 +437,8 @@ const crearFuncion = async (req, res) => {
       peliculaId,
       fecha,
       hora,
-      salaNumero
+      salaNumero,
     );
-
 
     // =================================================
     // RESPUESTA EXITOSA
@@ -519,25 +446,21 @@ const crearFuncion = async (req, res) => {
 
     return res.status(201).json({
       ok: true,
-      message: 'Función creada correctamente',
+      message: "Función creada correctamente",
       funcion: {
         id: funcionId,
         pelicula_id: peliculaId,
         fecha,
         hora,
-        sala: salaNumero
-      }
+        sala: salaNumero,
+      },
     });
-
   } catch (error) {
-    console.error(
-      'Error al crear función:',
-      error.message
-    );
+    console.error("Error al crear función:", error.message);
 
     return res.status(500).json({
       ok: false,
-      message: 'Error interno del servidor'
+      message: "Error interno del servidor",
     });
   }
 };
@@ -557,65 +480,46 @@ const actualizarFuncion = async (req, res) => {
     // desde la URL.
     const funcionId = Number(req.params.id);
 
-
     // =================================================
     // VALIDAR ID DE LA FUNCIÓN
     // =================================================
 
-    if (
-      !Number.isInteger(funcionId) ||
-      funcionId <= 0
-    ) {
+    if (!Number.isInteger(funcionId) || funcionId <= 0) {
       return res.status(400).json({
         ok: false,
-        message: 'El id de la función no es válido'
+        message: "El id de la función no es válido",
       });
     }
-
 
     // =================================================
     // COMPROBAR QUE LA FUNCIÓN EXISTA
     // =================================================
 
-    const funcionExistente =
-      await obtenerFuncionPorId(funcionId);
+    const funcionExistente = await obtenerFuncionPorId(funcionId);
 
     if (!funcionExistente) {
       return res.status(404).json({
         ok: false,
-        message: 'Función no encontrada'
+        message: "Función no encontrada",
       });
     }
-
 
     // =================================================
     // OBTENER DATOS
     // =================================================
 
-    const {
-      pelicula_id,
-      fecha,
-      hora,
-      sala
-    } = req.body;
-
+    const { pelicula_id, fecha, hora, sala } = req.body;
 
     // =================================================
     // VALIDAR CAMPOS OBLIGATORIOS
     // =================================================
 
-    if (
-      pelicula_id === undefined ||
-      !fecha ||
-      !hora ||
-      sala === undefined
-    ) {
+    if (pelicula_id === undefined || !fecha || !hora || sala === undefined) {
       return res.status(400).json({
         ok: false,
-        message: 'Faltan datos obligatorios de la función'
+        message: "Faltan datos obligatorios de la función",
       });
     }
-
 
     // =================================================
     // VALIDAR PELÍCULA
@@ -623,29 +527,23 @@ const actualizarFuncion = async (req, res) => {
 
     const peliculaId = Number(pelicula_id);
 
-    if (
-      !Number.isInteger(peliculaId) ||
-      peliculaId <= 0
-    ) {
+    if (!Number.isInteger(peliculaId) || peliculaId <= 0) {
       return res.status(400).json({
         ok: false,
-        message: 'El id de la película no es válido'
+        message: "El id de la película no es válido",
       });
     }
 
-
     // Comprobamos que la película indicada
     // realmente exista.
-    const pelicula =
-      await obtenerPeliculaPorId(peliculaId);
+    const pelicula = await obtenerPeliculaPorId(peliculaId);
 
     if (!pelicula) {
       return res.status(404).json({
         ok: false,
-        message: 'Película no encontrada'
+        message: "Película no encontrada",
       });
     }
-
 
     // =================================================
     // VALIDAR SALA
@@ -653,51 +551,40 @@ const actualizarFuncion = async (req, res) => {
 
     const salaNumero = Number(sala);
 
-    if (
-      !Number.isInteger(salaNumero) ||
-      salaNumero <= 0
-    ) {
+    if (!Number.isInteger(salaNumero) || salaNumero <= 0) {
       return res.status(400).json({
         ok: false,
-        message:
-          'La sala debe ser un número entero mayor que 0'
+        message: "La sala debe ser un número entero mayor que 0",
       });
     }
-
 
     // =================================================
     // VALIDIDAR FECHA
     // =================================================
 
     // Esperamos el formato YYYY-MM-DD.
-    const formatoFecha =
-      /^\d{4}-\d{2}-\d{2}$/;
+    const formatoFecha = /^\d{4}-\d{2}-\d{2}$/;
 
     if (!formatoFecha.test(fecha)) {
       return res.status(400).json({
         ok: false,
-        message:
-          'La fecha debe tener formato YYYY-MM-DD'
+        message: "La fecha debe tener formato YYYY-MM-DD",
       });
     }
-
 
     // =================================================
     // VALIDAR HORA
     // =================================================
 
     // Permitimos HH:MM o HH:MM:SS.
-    const formatoHora =
-      /^([01]\d|2[0-3]):[0-5]\d(:[0-5]\d)?$/;
+    const formatoHora = /^([01]\d|2[0-3]):[0-5]\d(:[0-5]\d)?$/;
 
     if (!formatoHora.test(hora)) {
       return res.status(400).json({
         ok: false,
-        message:
-          'La hora debe tener formato HH:MM o HH:MM:SS'
+        message: "La hora debe tener formato HH:MM o HH:MM:SS",
       });
     }
-
 
     // =================================================
     // ACTUALIZAR FUNCIÓN
@@ -708,9 +595,8 @@ const actualizarFuncion = async (req, res) => {
       peliculaId,
       fecha,
       hora,
-      salaNumero
+      salaNumero,
     );
-
 
     // =================================================
     // RESPUESTA EXITOSA
@@ -718,25 +604,21 @@ const actualizarFuncion = async (req, res) => {
 
     return res.status(200).json({
       ok: true,
-      message: 'Función actualizada correctamente',
+      message: "Función actualizada correctamente",
       funcion: {
         id: funcionId,
         pelicula_id: peliculaId,
         fecha,
         hora,
-        sala: salaNumero
-      }
+        sala: salaNumero,
+      },
     });
-
   } catch (error) {
-    console.error(
-      'Error al actualizar función:',
-      error.message
-    );
+    console.error("Error al actualizar función:", error.message);
 
     return res.status(500).json({
       ok: false,
-      message: 'Error interno del servidor'
+      message: "Error interno del servidor",
     });
   }
 };
@@ -757,21 +639,16 @@ const eliminarFuncion = async (req, res) => {
     // mediante la URL.
     const funcionId = Number(req.params.id);
 
-
     // =================================================
     // VALIDAR ID
     // =====================================================
 
-    if (
-      !Number.isInteger(funcionId) ||
-      funcionId <= 0
-    ) {
+    if (!Number.isInteger(funcionId) || funcionId <= 0) {
       return res.status(400).json({
         ok: false,
-        message: 'El id de la función no es válido'
+        message: "El id de la función no es válido",
       });
     }
-
 
     // =================================================
     // COMPROBAR EXISTENCIA
@@ -779,16 +656,14 @@ const eliminarFuncion = async (req, res) => {
 
     // Antes de eliminar comprobamos que la función
     // realmente exista.
-    const funcionExistente =
-      await obtenerFuncionPorId(funcionId);
+    const funcionExistente = await obtenerFuncionPorId(funcionId);
 
     if (!funcionExistente) {
       return res.status(404).json({
         ok: false,
-        message: 'Función no encontrada'
+        message: "Función no encontrada",
       });
     }
-
 
     // =================================================
     // ELIMINAR FUNCIÓN
@@ -796,27 +671,22 @@ const eliminarFuncion = async (req, res) => {
 
     await eliminarFuncionService(funcionId);
 
-
     // =================================================
     // RESPUESTA EXITOSA
     // =====================================================
 
     return res.status(200).json({
       ok: true,
-      message: 'Función eliminada correctamente'
+      message: "Función eliminada correctamente",
     });
-
   } catch (error) {
     // Mostramos el error técnico en la terminal
     // durante el desarrollo.
-    console.error(
-      'Error al eliminar función:',
-      error.message
-    );
+    console.error("Error al eliminar función:", error.message);
 
     return res.status(500).json({
       ok: false,
-      message: 'Error interno del servidor'
+      message: "Error interno del servidor",
     });
   }
 };
@@ -831,5 +701,5 @@ module.exports = {
   eliminarPelicula,
   crearFuncion,
   actualizarFuncion,
-  eliminarFuncion
+  eliminarFuncion,
 };

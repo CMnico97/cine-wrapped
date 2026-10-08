@@ -2,8 +2,7 @@
 //
 // Este servicio será responsable de realizar
 // las consultas relacionadas con películas.
-const pool = require('../config/database');
-
+const pool = require("../config/database");
 
 // =====================================================
 // OBTENER TODAS LAS PELÍCULAS
@@ -30,7 +29,7 @@ const obtenerPeliculas = async () => {
         fecha_estreno
       FROM peliculas
       ORDER BY titulo ASC
-    `
+    `,
   );
 
   // Devolvemos el arreglo de películas obtenido
@@ -64,7 +63,7 @@ const obtenerPeliculaPorId = async (id) => {
       FROM peliculas
       WHERE id = ?
     `,
-    [id]
+    [id],
   );
 
   // Como el id es una clave primaria, solamente puede
@@ -93,7 +92,7 @@ const crearPelicula = async (
   genero,
   director,
   poster,
-  fechaEstreno
+  fechaEstreno,
 ) => {
   // Ejecutamos la inserción utilizando parámetros (?).
   //
@@ -112,15 +111,7 @@ const crearPelicula = async (
       )
       VALUES (?, ?, ?, ?, ?, ?, ?)
     `,
-    [
-      titulo,
-      sinopsis,
-      duracion,
-      genero,
-      director,
-      poster,
-      fechaEstreno
-    ]
+    [titulo, sinopsis, duracion, genero, director, poster, fechaEstreno],
   );
 
   // insertId contiene el identificador generado
@@ -145,7 +136,7 @@ const actualizarPelicula = async (
   genero,
   director,
   poster,
-  fechaEstreno
+  fechaEstreno,
 ) => {
   const [result] = await pool.query(
     `
@@ -160,16 +151,7 @@ const actualizarPelicula = async (
         fecha_estreno = ?
       WHERE id = ?
     `,
-    [
-      titulo,
-      sinopsis,
-      duracion,
-      genero,
-      director,
-      poster,
-      fechaEstreno,
-      id
-    ]
+    [titulo, sinopsis, duracion, genero, director, poster, fechaEstreno, id],
   );
 
   // affectedRows indica cuántas filas fueron
@@ -192,7 +174,7 @@ const eliminarPelicula = async (id) => {
       DELETE FROM peliculas
       WHERE id = ?
     `,
-    [id]
+    [id],
   );
 
   // affectedRows nos permite saber cuántas filas
@@ -209,5 +191,5 @@ module.exports = {
   obtenerPeliculaPorId,
   crearPelicula,
   actualizarPelicula,
-  eliminarPelicula
+  eliminarPelicula,
 };

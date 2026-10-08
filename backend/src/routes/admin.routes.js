@@ -1,6 +1,6 @@
 // Importamos Express para crear las rutas
 // correspondientes al panel administrativo.
-const express = require('express');
+const express = require("express");
 
 // Importamos nuestros dos middlewares.
 //
@@ -11,8 +11,8 @@ const express = require('express');
 // comprueba que el usuario tenga rol "admin".
 const {
   verificarToken,
-  verificarAdmin
-} = require('../middleware/auth.middleware');
+  verificarAdmin,
+} = require("../middleware/auth.middleware");
 
 // Importamos los controladores correspondientes
 // a las operaciones administrativas.
@@ -22,15 +22,14 @@ const {
   eliminarPelicula,
   crearFuncion,
   actualizarFuncion,
-  eliminarFuncion
-} = require('../controllers/admin.controller');
+  eliminarFuncion,
+} = require("../controllers/admin.controller");
 
 // =====================================================
 // CREACIÓN DEL ROUTER
 // =====================================================
 
 const router = express.Router();
-
 
 // =====================================================
 // PROTEGER TODAS LAS RUTAS ADMINISTRATIVAS
@@ -46,10 +45,7 @@ const router = express.Router();
 //
 // Primero autenticamos al usuario y después
 // comprobamos sus permisos.
-router.use(
-  verificarToken,
-  verificarAdmin
-);
+router.use(verificarToken, verificarAdmin);
 
 // =====================================================
 // ADMINISTRACIÓN DE PELÍCULAS
@@ -62,10 +58,7 @@ router.use(
 // router.use(verificarToken, verificarAdmin)
 //
 // esta ruta ya se encuentra protegida.
-router.post(
-  '/peliculas',
-  crearPelicula
-);
+router.post("/peliculas", crearPelicula);
 
 // Permite modificar una película existente.
 //
@@ -74,20 +67,14 @@ router.post(
 // Ejemplo:
 //
 // PUT /admin/peliculas/2
-router.put(
-  '/peliculas/:id',
-  actualizarPelicula
-);
+router.put("/peliculas/:id", actualizarPelicula);
 
 // Permite eliminar una película existente.
 //
 // Ejemplo:
 //
 // DELETE /admin/peliculas/2
-router.delete(
-  '/peliculas/:id',
-  eliminarPelicula
-);
+router.delete("/peliculas/:id", eliminarPelicula);
 
 // =====================================================
 // ADMINISTRACIÓN DE FUNCIONES
@@ -102,30 +89,21 @@ router.delete(
 //
 // porque ambos middlewares fueron registrados
 // anteriormente con router.use().
-router.post(
-  '/funciones',
-  crearFuncion
-);
+router.post("/funciones", crearFuncion);
 
 // Permite modificar una función existente.
 //
 // Ejemplo:
 //
 // PUT /admin/funciones/3
-router.put(
-  '/funciones/:id',
-  actualizarFuncion
-);
+router.put("/funciones/:id", actualizarFuncion);
 
 // Permite eliminar una función existente.
 //
 // Ejemplo:
 //
 // DELETE /admin/funciones/3
-router.delete(
-  '/funciones/:id',
-  eliminarFuncion
-);
+router.delete("/funciones/:id", eliminarFuncion);
 
 // =====================================================
 // RUTA TEMPORAL DE PRUEBA
@@ -135,14 +113,13 @@ router.delete(
 // que la protección administrativa funciona.
 //
 // Más adelante podremos eliminarla.
-router.get('/test', (req, res) => {
+router.get("/test", (req, res) => {
   return res.status(200).json({
     ok: true,
-    message: 'Acceso de administrador autorizado',
-    usuario: req.usuario
+    message: "Acceso de administrador autorizado",
+    usuario: req.usuario,
   });
 });
-
 
 // =====================================================
 // EXPORTACIÓN DEL ROUTER

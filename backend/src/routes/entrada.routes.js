@@ -1,27 +1,21 @@
 // Importamos Express para crear nuestro Router.
-const express = require('express');
+const express = require("express");
 
 // Importamos el controlador encargado
 // del proceso de creación de entradas.
-const {
-  crearEntrada
-} = require('../controllers/entrada.controller');
+const { crearEntrada } = require("../controllers/entrada.controller");
 
 // Importamos el middleware de autenticación.
 //
 // Solamente un usuario autenticado podrá
 // realizar una compra.
-const {
-  verificarToken
-} = require('../middleware/auth.middleware');
-
+const { verificarToken } = require("../middleware/auth.middleware");
 
 // =====================================================
 // CREACIÓN DEL ROUTER
 // =====================================================
 
 const router = express.Router();
-
 
 // =====================================================
 // CREAR ENTRADA
@@ -39,12 +33,7 @@ const router = express.Router();
 // Ruta final:
 //
 // POST /entradas
-router.post(
-  '/',
-  verificarToken,
-  crearEntrada
-);
-
+router.post("/", verificarToken, crearEntrada);
 
 // =====================================================
 // EXPORTACIÓN DEL ROUTER

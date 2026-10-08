@@ -1,19 +1,17 @@
 // Importamos Express para poder crear un Router.
-const express = require('express');
+const express = require("express");
 
 // Importamos los controladores relacionados
 // con la autenticación de usuarios.
 const {
   register,
-  login
-} = require('../controllers/auth.controller');
+  login,
+  obtenerPerfil,
+} = require("../controllers/auth.controller");
 
 // Importamos el middleware encargado de comprobar
 // que el usuario tenga un JWT válido.
-const {
-  verificarToken
-} = require('../middleware/auth.middleware');
-
+const { verificarToken } = require("../middleware/auth.middleware");
 
 // =====================================================
 // CREACIÓN DEL ROUTER
@@ -22,7 +20,6 @@ const {
 // Creamos un router específico para las rutas
 // relacionadas con autenticación.
 const router = express.Router();
-
 
 // =====================================================
 // REGISTRO DE USUARIOS
@@ -37,8 +34,7 @@ const router = express.Router();
 // la ruta final será:
 //
 // POST /auth/register
-router.post('/register', register);
-
+router.post("/register", register);
 
 // =====================================================
 // INICIO DE SESIÓN
@@ -49,28 +45,28 @@ router.post('/register', register);
 // La ruta final será:
 //
 // POST /auth/login
-router.post('/login', login);
-
+router.post("/login", login);
 
 // =====================================================
-// RUTA PROTEGIDA DE PRUEBA
+// PERFIL DEL USUARIO AUTENTICADO
 // =====================================================
 
-// Esta ruta solamente podrá utilizarse si la petición
-// contiene un token JWT válido.
+// Esta ruta devuelve la información del usuario
+// que actualmente tiene una sesión válida.
 //
-// Antes de ejecutar el controlador de la ruta,
-// Express ejecutará verificarToken.
-router.get('/me', verificarToken, (req, res) => {
-  // req.usuario fue creado dentro del middleware
-  // después de verificar correctamente el JWT.
-  res.status(200).json({
-    ok: true,
-    message: 'Token válido',
-    usuario: req.usuario
-  });
-});
-
+// Primero ejecutamos verificarToken.
+//
+// Si el JWT es válido, el middleware guarda
+// la información del token dentro de req.usuario.
+//
+// Después ejecutamos obtenerPerfil, que utiliza
+// el id del usuario para consultar sus datos
+// actualizados directamente desde MySQL.
+//
+// La ruta final será:
+//
+// GET /auth/me
+router.get("/me", verificarToken, obtenerPerfil);
 
 // =====================================================
 // EXPORTACIÓN DEL ROUTER

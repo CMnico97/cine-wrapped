@@ -2,9 +2,8 @@
 // desde nuestro servicio.
 const {
   obtenerPeliculas,
-  obtenerPeliculaPorId
-} = require('../services/pelicula.service');
-
+  obtenerPeliculaPorId,
+} = require("../services/pelicula.service");
 
 // =====================================================
 // LISTAR PELÍCULAS
@@ -23,21 +22,17 @@ const listarPeliculas = async (req, res) => {
     // de películas obtenida.
     return res.status(200).json({
       ok: true,
-      peliculas
+      peliculas,
     });
-
   } catch (error) {
     // Mostramos el error técnico únicamente
     // en la terminal del backend.
-    console.error(
-      'Error al obtener películas:',
-      error.message
-    );
+    console.error("Error al obtener películas:", error.message);
 
     // Enviamos una respuesta genérica al cliente.
     return res.status(500).json({
       ok: false,
-      message: 'Error interno del servidor'
+      message: "Error interno del servidor",
     });
   }
 };
@@ -64,28 +59,23 @@ const obtenerDetallePelicula = async (req, res) => {
 
     // Comprobamos que el id sea un número entero
     // positivo antes de consultar la base de datos.
-    if (
-      !Number.isInteger(peliculaId) ||
-      peliculaId <= 0
-    ) {
+    if (!Number.isInteger(peliculaId) || peliculaId <= 0) {
       return res.status(400).json({
         ok: false,
-        message: 'El id de la película no es válido'
+        message: "El id de la película no es válido",
       });
     }
 
     // Solicitamos al servicio la película
     // correspondiente al id recibido.
-    const pelicula = await obtenerPeliculaPorId(
-      peliculaId
-    );
+    const pelicula = await obtenerPeliculaPorId(peliculaId);
 
     // Si el servicio no encontró ninguna película,
     // respondemos con HTTP 404.
     if (!pelicula) {
       return res.status(404).json({
         ok: false,
-        message: 'Película no encontrada'
+        message: "Película no encontrada",
       });
     }
 
@@ -93,23 +83,19 @@ const obtenerDetallePelicula = async (req, res) => {
     // respondemos con HTTP 200 y sus datos.
     return res.status(200).json({
       ok: true,
-      pelicula
+      pelicula,
     });
-
   } catch (error) {
     // Mostramos el error técnico en la terminal
     // para poder identificar problemas durante
     // el desarrollo.
-    console.error(
-      'Error al obtener el detalle de la película:',
-      error.message
-    );
+    console.error("Error al obtener el detalle de la película:", error.message);
 
     // Al cliente solamente le enviamos
     // un mensaje genérico.
     return res.status(500).json({
       ok: false,
-      message: 'Error interno del servidor'
+      message: "Error interno del servidor",
     });
   }
 };
@@ -122,5 +108,5 @@ const obtenerDetallePelicula = async (req, res) => {
 // posteriormente desde pelicula.routes.js.
 module.exports = {
   listarPeliculas,
-  obtenerDetallePelicula
+  obtenerDetallePelicula,
 };

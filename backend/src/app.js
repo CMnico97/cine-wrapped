@@ -1,36 +1,36 @@
 // Importamos Express para crear y configurar
 // nuestra aplicación.
-const express = require('express');
+const express = require("express");
 
 // Importamos CORS para permitir que nuestro frontend
 // pueda realizar peticiones HTTP al backend.
-const cors = require('cors');
+const cors = require("cors");
 
 // Importamos el pool de conexiones a MySQL.
 //
 // Actualmente lo utilizamos en nuestra ruta temporal
 // de prueba de conexión con la base de datos.
-const pool = require('./config/database');
+const pool = require("./config/database");
 
 // Importamos las rutas relacionadas
 // con autenticación.
-const authRoutes = require('./routes/auth.routes');
+const authRoutes = require("./routes/auth.routes");
 
 // Importamos las rutas relacionadas
 // con las funciones del cine.
-const funcionRoutes = require('./routes/funcion.routes');
+const funcionRoutes = require("./routes/funcion.routes");
 
 // Importamos las rutas relacionadas
 // con las entradas y compras simuladas.
-const entradaRoutes = require('./routes/entrada.routes');
+const entradaRoutes = require("./routes/entrada.routes");
 
 // Importamos las rutas relacionadas
 // con la información personal del usuario.
-const usuarioRoutes = require('./routes/usuario.routes');
+const usuarioRoutes = require("./routes/usuario.routes");
 
 // Importamos las rutas correspondientes
 // a las operaciones administrativas.
-const adminRoutes = require('./routes/admin.routes');
+const adminRoutes = require("./routes/admin.routes");
 
 // =====================================================
 // CREACIÓN DE LA APLICACIÓN
@@ -42,7 +42,7 @@ const app = express();
 
 // Importamos las rutas relacionadas
 // con la cartelera de películas.
-const peliculaRoutes = require('./routes/pelicula.routes');
+const peliculaRoutes = require("./routes/pelicula.routes");
 
 // =====================================================
 // MIDDLEWARES GENERALES
@@ -58,7 +58,6 @@ const peliculaRoutes = require('./routes/pelicula.routes');
 // CORS permitirá la comunicación entre ambos.
 app.use(cors());
 
-
 // Permitimos que Express pueda interpretar cuerpos
 // de peticiones enviados en formato JSON.
 //
@@ -70,7 +69,6 @@ app.use(cors());
 //   "password": "123456"
 // }
 app.use(express.json());
-
 
 // =====================================================
 // RUTAS DE LA API
@@ -86,7 +84,7 @@ app.use(express.json());
 // se transforma en:
 //
 // POST /auth/register
-app.use('/auth', authRoutes);
+app.use("/auth", authRoutes);
 
 // Montamos las rutas relacionadas con películas.
 //
@@ -97,7 +95,7 @@ app.use('/auth', authRoutes);
 // se transforma en:
 //
 // GET /peliculas
-app.use('/peliculas', peliculaRoutes);
+app.use("/peliculas", peliculaRoutes);
 
 // Montamos las rutas relacionadas con funciones.
 //
@@ -108,7 +106,7 @@ app.use('/peliculas', peliculaRoutes);
 // se transforma en:
 //
 // GET /funciones/:id/asientos
-app.use('/funciones', funcionRoutes);
+app.use("/funciones", funcionRoutes);
 
 // Montamos las rutas relacionadas con entradas.
 //
@@ -117,7 +115,7 @@ app.use('/funciones', funcionRoutes);
 // se transforma en:
 //
 // POST /entradas
-app.use('/entradas', entradaRoutes);
+app.use("/entradas", entradaRoutes);
 
 // Montamos las rutas relacionadas con usuarios.
 //
@@ -128,7 +126,7 @@ app.use('/entradas', entradaRoutes);
 // se convierte en:
 //
 // GET /usuarios/me/entradas
-app.use('/usuarios', usuarioRoutes);
+app.use("/usuarios", usuarioRoutes);
 
 // =====================================================
 // RUTA DE PRUEBA DE EXPRESS
@@ -136,11 +134,11 @@ app.use('/usuarios', usuarioRoutes);
 
 // Esta ruta comprueba que la aplicación Express
 // está funcionando correctamente.
-app.get('/api/health', (req, res) => {
+app.get("/api/health", (req, res) => {
   // Respondemos con código HTTP 200 y un objeto JSON.
   res.status(200).json({
     ok: true,
-    message: 'API de Cine Wrapped funcionando'
+    message: "API de Cine Wrapped funcionando",
   });
 });
 
@@ -156,45 +154,38 @@ app.get('/api/health', (req, res) => {
 // se transforma en:
 //
 // GET /admin/test
-app.use('/admin', adminRoutes);
+app.use("/admin", adminRoutes);
 // =====================================================
 // RUTA TEMPORAL DE PRUEBA DE MYSQL
 // =====================================================
 
 // Esta ruta comprueba que Express puede consultar
 // información real desde nuestra base de datos.
-app.get('/api/health/database', async (req, res) => {
+app.get("/api/health/database", async (req, res) => {
   try {
     // Consultamos todas las películas almacenadas
     // actualmente en la tabla peliculas.
-    const [rows] = await pool.query(
-      'SELECT * FROM peliculas'
-    );
+    const [rows] = await pool.query("SELECT * FROM peliculas");
 
     // Si la consulta se ejecuta correctamente,
     // enviamos las películas obtenidas como respuesta.
     res.status(200).json({
       ok: true,
-      message: 'Conexión con MySQL funcionando correctamente',
-      peliculas: rows
+      message: "Conexión con MySQL funcionando correctamente",
+      peliculas: rows,
     });
-
   } catch (error) {
     // Si ocurre un error, mostramos información
     // en la terminal del backend.
-    console.error(
-      'Error al consultar MySQL:',
-      error.message
-    );
+    console.error("Error al consultar MySQL:", error.message);
 
     // Enviamos un error HTTP 500 al cliente.
     res.status(500).json({
       ok: false,
-      message: 'No fue posible consultar la base de datos'
+      message: "No fue posible consultar la base de datos",
     });
   }
 });
-
 
 // =====================================================
 // EXPORTACIÓN DE LA APLICACIÓN

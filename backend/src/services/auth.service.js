@@ -2,8 +2,7 @@
 //
 // El servicio utilizará este pool para realizar
 // consultas sobre la tabla usuarios.
-const pool = require('../config/database');
-
+const pool = require("../config/database");
 
 // =====================================================
 // BUSCAR USUARIO POR EMAIL
@@ -20,17 +19,15 @@ const buscarUsuarioPorEmail = async (email) => {
   //
   // Esto es importante porque evita concatenar directamente
   // información ingresada por el usuario dentro del SQL.
-  const [rows] = await pool.query(
-    'SELECT * FROM usuarios WHERE email = ?',
-    [email]
-  );
+  const [rows] = await pool.query("SELECT * FROM usuarios WHERE email = ?", [
+    email,
+  ]);
 
   // Si encontramos un usuario devolvemos el primero.
   //
   // Si no existe, devolvemos undefined.
   return rows[0];
 };
-
 
 // =====================================================
 // CREAR USUARIO
@@ -58,18 +55,48 @@ const crearUsuario = async (nombre, email, passwordHash) => {
       )
       VALUES (?, ?, ?)
     `,
-    [nombre, email, passwordHash]
+    [nombre, email, passwordHash],
   );
 
   // result.insertId contiene el ID generado automáticamente
   // por MySQL para el nuevo usuario.
   return result.insertId;
 };
+// =====================================================
+// OBTENER PERFIL DEL USUARIO
+// =====================================================
 
+// Busca los datos públicos del usuario mediante su id.
+//
+// Importante:
+// nunca devolvemos la contraseña.
+const obtenerUsuarioPorId = async (id) => {
+  // Consultamos solamente los campos que
+  // necesitamos mostrar en el perfil.
+  const [filas] = await pool.query(
+    `
+      SELECT
+        id,
+        nombre,
+        email,
+        rol,
+        fecha_registro
+      FROM usuarios
+      WHERE id = ?
+      LIMIT 1
+    `,
+    [id],
+  );
+
+  // Si no encontramos ningún usuario,
+  // devolvemos null.
+  return filas[0] || null;
+};
 
 // Exportamos las funciones para que puedan ser utilizadas
 // desde nuestro controlador.
 module.exports = {
   buscarUsuarioPorEmail,
-  crearUsuario
+  crearUsuario,
+  obtenerUsuarioPorId,
 };

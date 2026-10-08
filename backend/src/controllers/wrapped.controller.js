@@ -4,9 +4,8 @@ const {
   obtenerResumenGeneral,
   obtenerGeneroMasVisto,
   obtenerMesMasActivo,
-  obtenerUltimaPelicula
-} = require('../services/wrapped.service');
-
+  obtenerUltimaPelicula,
+} = require("../services/wrapped.service");
 
 // =====================================================
 // OBTENER CINE WRAPPED
@@ -24,7 +23,6 @@ const obtenerWrapped = async (req, res) => {
     // que fue guardado por verificarToken.
     const usuarioId = req.usuario.id;
 
-
     // =================================================
     // EJECUTAR CONSULTAS
     // =================================================
@@ -33,18 +31,13 @@ const obtenerWrapped = async (req, res) => {
     //
     // Promise.all permite ejecutarlas en paralelo
     // porque ninguna depende del resultado de otra.
-    const [
-      resumen,
-      generoMasVisto,
-      mesMasActivo,
-      ultimaPelicula
-    ] = await Promise.all([
-      obtenerResumenGeneral(usuarioId),
-      obtenerGeneroMasVisto(usuarioId),
-      obtenerMesMasActivo(usuarioId),
-      obtenerUltimaPelicula(usuarioId)
-    ]);
-
+    const [resumen, generoMasVisto, mesMasActivo, ultimaPelicula] =
+      await Promise.all([
+        obtenerResumenGeneral(usuarioId),
+        obtenerGeneroMasVisto(usuarioId),
+        obtenerMesMasActivo(usuarioId),
+        obtenerUltimaPelicula(usuarioId),
+      ]);
 
     // =================================================
     // CONSTRUIR RESPUESTA
@@ -57,19 +50,13 @@ const obtenerWrapped = async (req, res) => {
     // Number() garantiza que nuestra API entregue
     // números en estas propiedades.
     const wrapped = {
-      peliculasVistas: Number(
-        resumen.peliculas_vistas
-      ),
+      peliculasVistas: Number(resumen.peliculas_vistas),
 
-      minutosEnCine: Number(
-        resumen.minutos_en_cine
-      ),
+      minutosEnCine: Number(resumen.minutos_en_cine),
 
       // Si todavía no existe actividad,
       // devolvemos null.
-      generoMasVisto: generoMasVisto
-        ? generoMasVisto.genero
-        : null,
+      generoMasVisto: generoMasVisto ? generoMasVisto.genero : null,
 
       // Guardamos año y mes por separado.
       //
@@ -79,7 +66,7 @@ const obtenerWrapped = async (req, res) => {
         ? {
             anio: Number(mesMasActivo.anio),
             mes: Number(mesMasActivo.mes),
-            cantidad: Number(mesMasActivo.cantidad)
+            cantidad: Number(mesMasActivo.cantidad),
           }
         : null,
 
@@ -91,11 +78,10 @@ const obtenerWrapped = async (req, res) => {
             titulo: ultimaPelicula.titulo,
             poster: ultimaPelicula.poster,
             fecha: ultimaPelicula.fecha,
-            hora: ultimaPelicula.hora
+            hora: ultimaPelicula.hora,
           }
-        : null
+        : null,
     };
-
 
     // =================================================
     // RESPUESTA EXITOSA
@@ -103,29 +89,24 @@ const obtenerWrapped = async (req, res) => {
 
     return res.status(200).json({
       ok: true,
-      wrapped
+      wrapped,
     });
-
   } catch (error) {
     // Mostramos el error técnico en la terminal
     // para facilitar el desarrollo.
-    console.error(
-      'Error al obtener Cine Wrapped:',
-      error.message
-    );
+    console.error("Error al obtener Cine Wrapped:", error.message);
 
     return res.status(500).json({
       ok: false,
-      message: 'Error interno del servidor'
+      message: "Error interno del servidor",
     });
   }
 };
-
 
 // =====================================================
 // EXPORTACIÓN DEL CONTROLADOR
 // =====================================================
 
 module.exports = {
-  obtenerWrapped
+  obtenerWrapped,
 };

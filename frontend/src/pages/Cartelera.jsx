@@ -1,17 +1,14 @@
 // Importamos las herramientas de React necesarias
 // para manejar estado y cargar información.
-import { useEffect, useState } from 'react';
+import { useEffect, useState } from "react";
 
 // Link nos permitirá navegar hacia el detalle
 // de cada película.
-import { Link } from 'react-router-dom';
+import { Link } from "react-router-dom";
 
 // Importamos nuestra función que consulta
 // GET /peliculas en el backend.
-import {
-  obtenerPeliculas
-} from '../services/api';
-
+import { obtenerPeliculas } from "../services/api";
 
 // =====================================================
 // PÁGINA DE CARTELERA
@@ -29,7 +26,6 @@ function Cartelera() {
   // durante la petición.
   const [error, setError] = useState(null);
 
-
   // ===================================================
   // CARGAR PELÍCULAS
   // ===================================================
@@ -37,14 +33,11 @@ function Cartelera() {
   useEffect(() => {
     const cargarPeliculas = async () => {
       try {
-        const peliculasObtenidas =
-          await obtenerPeliculas();
+        const peliculasObtenidas = await obtenerPeliculas();
 
         setPeliculas(peliculasObtenidas);
-
       } catch (errorPeticion) {
         setError(errorPeticion.message);
-
       } finally {
         setCargando(false);
       }
@@ -52,7 +45,6 @@ function Cartelera() {
 
     cargarPeliculas();
   }, []);
-
 
   // ===================================================
   // ESTADO DE CARGA
@@ -66,7 +58,6 @@ function Cartelera() {
     );
   }
 
-
   // ===================================================
   // ESTADO DE ERROR
   // ===================================================
@@ -76,13 +67,10 @@ function Cartelera() {
       <main className="contenedor">
         <h1>Cartelera</h1>
 
-        <p className="mensaje-error">
-          {error}
-        </p>
+        <p className="mensaje-error">{error}</p>
       </main>
     );
   }
-
 
   // ===================================================
   // CARTELERA
@@ -91,27 +79,19 @@ function Cartelera() {
   return (
     <main className="contenedor">
       <header className="encabezado">
-        <p className="etiqueta">
-          Cine Wrapped
-        </p>
+        <p className="etiqueta">Cine Wrapped</p>
 
         <h1>Cartelera</h1>
 
-        <p>
-          Revisa las películas disponibles actualmente.
-        </p>
+        <p>Revisa las películas disponibles actualmente.</p>
       </header>
-
 
       {peliculas.length === 0 ? (
         <p>No hay películas disponibles.</p>
       ) : (
         <section className="cartelera">
           {peliculas.map((pelicula) => (
-            <article
-              className="pelicula"
-              key={pelicula.id}
-            >
+            <article className="pelicula" key={pelicula.id}>
               <div className="poster">
                 {pelicula.poster ? (
                   <img
@@ -128,15 +108,14 @@ function Cartelera() {
 
                 <p className="pelicula-datos">
                   {pelicula.genero}
-                  {' · '}
+                  {" · "}
                   {pelicula.duracion} min
                 </p>
 
                 <p>{pelicula.sinopsis}</p>
 
                 <p>
-                  <strong>Director:</strong>{' '}
-                  {pelicula.director}
+                  <strong>Director:</strong> {pelicula.director}
                 </p>
 
                 {/* Cada película tendrá una URL
@@ -145,10 +124,7 @@ function Cartelera() {
                     Por ejemplo:
 
                     /peliculas/1 */}
-                <Link
-                  className="boton"
-                  to={`/peliculas/${pelicula.id}`}
-                >
+                <Link className="boton" to={`/peliculas/${pelicula.id}`}>
                   Ver película
                 </Link>
               </div>
@@ -159,6 +135,5 @@ function Cartelera() {
     </main>
   );
 }
-
 
 export default Cartelera;

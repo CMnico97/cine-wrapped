@@ -3,8 +3,7 @@
 // Cine Wrapped no tendrá una tabla propia.
 // Todas las estadísticas se calcularán utilizando
 // las entradas confirmadas que ya existen en la BD.
-const pool = require('../config/database');
-
+const pool = require("../config/database");
 
 // =====================================================
 // OBTENER RESUMEN GENERAL
@@ -39,14 +38,13 @@ const obtenerResumenGeneral = async (usuarioId) => {
       WHERE e.usuario_id = ?
         AND e.estado = 'confirmada'
     `,
-    [usuarioId]
+    [usuarioId],
   );
 
   // Las funciones de agregación devuelven
   // una sola fila.
   return rows[0];
 };
-
 
 // =====================================================
 // OBTENER GÉNERO MÁS VISTO
@@ -83,14 +81,13 @@ const obtenerGeneroMasVisto = async (usuarioId) => {
 
       LIMIT 1
     `,
-    [usuarioId]
+    [usuarioId],
   );
 
   // Si el usuario todavía no tiene entradas,
   // esta consulta no devolverá resultados.
   return rows[0] || null;
 };
-
 
 // =====================================================
 // OBTENER MES MÁS ACTIVO
@@ -128,12 +125,11 @@ const obtenerMesMasActivo = async (usuarioId) => {
 
       LIMIT 1
     `,
-    [usuarioId]
+    [usuarioId],
   );
 
   return rows[0] || null;
 };
-
 
 // =====================================================
 // OBTENER ÚLTIMA PELÍCULA
@@ -171,12 +167,11 @@ const obtenerUltimaPelicula = async (usuarioId) => {
 
       LIMIT 1
     `,
-    [usuarioId]
+    [usuarioId],
   );
 
   return rows[0] || null;
 };
-
 
 // =====================================================
 // EXPORTACIÓN DEL SERVICIO
@@ -186,5 +181,5 @@ module.exports = {
   obtenerResumenGeneral,
   obtenerGeneroMasVisto,
   obtenerMesMasActivo,
-  obtenerUltimaPelicula
+  obtenerUltimaPelicula,
 };
