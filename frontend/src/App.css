@@ -1590,3 +1590,49 @@
     grid-template-columns: 1fr;
   }
 }
+/* =====================================================
+   BOTÓN VOLVER - NAVBAR
+   ===================================================== */
+
+/* Mantiene el mismo estilo oscuro del Navbar. */
+.navbar-volver {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  padding: 9px 14px;
+
+  background: transparent;
+  color: #ffffff;
+
+  border: 1px solid #444;
+  border-radius: 8px;
+
+  font-size: 14px;
+  font-weight: 600;
+
+  cursor: pointer;
+  white-space: nowrap;
+  flex-shrink: 0;
+
+  transition: background 0.2s ease;
+}
+
+/* Destacamos el botón al pasar el cursor. */
+.navbar-volver:hover {
+  background: #292929;
+}
+
+/* Mejoramos la visibilidad al navegar con teclado. */
+.navbar-volver:focus-visible {
+  outline: 2px solid #ffffff;
+  outline-offset: 3px;
+}
+
+/* Ajustamos el tamaño para pantallas pequeñas. */
+@media (max-width: 850px) {
+  .navbar-volver {
+    padding: 8px 12px;
+    font-size: 13px;
+  }
+}

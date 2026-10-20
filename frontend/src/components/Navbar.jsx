@@ -3,7 +3,7 @@
 //
 // useNavigate permite realizar una redirección
 // después de cerrar sesión.
-import { Link, NavLink, useNavigate } from "react-router-dom";
+import { Link, NavLink, useNavigate, useLocation } from "react-router-dom";
 
 // Importamos las funciones necesarias
 // para conocer y modificar la sesión.
@@ -33,6 +33,28 @@ function Navbar() {
   // Herramienta de React Router
   // para realizar redirecciones.
   const navigate = useNavigate();
+
+  // ===================================================
+  // REGRESAR A LA PÁGINA ANTERIOR
+  // ===================================================
+
+  const manejarVolver = () => {
+    // Comprobamos si React Router tiene una página
+    // anterior dentro del historial de navegación.
+    if (window.history.state?.idx > 0) {
+      // Regresamos una posición en el historial.
+      navigate(-1);
+    } else {
+      // Si el usuario abrió la página directamente,
+      // lo enviamos al inicio de Cine Wrapped.
+      navigate("/");
+    }
+  };
+  // Obtenemos la ruta actual de la aplicación.
+  const location = useLocation();
+
+  // Comprobamos si estamos en la página de inicio.
+  const esInicio = location.pathname === "/";
 
   // ===================================================
   // CERRAR SESIÓN
@@ -65,6 +87,20 @@ function Navbar() {
             ============================================= */}
 
         <div className="navbar-enlaces">
+          {/* Botón para regresar a la página anterior.
+    Se mantiene junto a los enlaces principales
+    para funcionar también en dispositivos móviles. */}
+          {/* Mostramos el botón Volver solamente
+    cuando NO estamos en la página de inicio. */}
+          {!esInicio && (
+            <button
+              type="button"
+              className="navbar-volver"
+              onClick={manejarVolver}
+            >
+              ← Volver
+            </button>
+          )}
           <NavLink
             to="/"
             className={({ isActive }) =>
