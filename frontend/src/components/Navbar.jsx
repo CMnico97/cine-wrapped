@@ -119,6 +119,16 @@ function Navbar() {
             Cartelera
           </NavLink>
 
+          {/* Acceso público al catálogo de confitería. */}
+          <NavLink
+            to="/confiteria"
+            className={({ isActive }) =>
+              isActive ? "navbar-link activo" : "navbar-link"
+            }
+          >
+            Confitería
+          </NavLink>
+
           {/* Estas opciones solamente tienen sentido
               cuando existe una sesión iniciada. */}
           {autenticado && (
@@ -150,6 +160,18 @@ function Navbar() {
                 }
               >
                 Mi Wrapped
+              </NavLink>
+
+              {/* Historial de compras de confitería.
+    Visible para usuarios autenticados,
+    incluidos los administradores. */}
+              <NavLink
+                to="/mis-compras-confiteria"
+                className={({ isActive }) =>
+                  isActive ? "navbar-link activo" : "navbar-link"
+                }
+              >
+                Mis compras
               </NavLink>
 
               {/* Este enlace solamente aparece

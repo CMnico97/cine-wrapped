@@ -75,7 +75,11 @@ function Admin() {
 
         <h1>Panel administrativo</h1>
 
-        <p>Gestiona las películas y funciones disponibles en Cine Wrapped.</p>
+        {/* Descripción de las herramientas administrativas. */}
+        <p>
+          Gestiona las películas, funciones y productos de confitería
+          disponibles en Cine Wrapped.
+        </p>
       </header>
 
       {/* =================================================
@@ -113,6 +117,21 @@ function Admin() {
 
           <Link className="boton" to="/admin/funciones">
             Gestionar funciones
+          </Link>
+          <div>
+            <p className="etiqueta">Confitería</p>
+
+            <h2>Productos</h2>
+
+            <p>
+              Agrega productos de confitería, modifica sus precios y controla su
+              disponibilidad.
+            </p>
+          </div>
+
+          {/* Acceso al panel de administración de productos. */}
+          <Link className="boton" to="/admin/confiteria">
+            Gestionar confitería
           </Link>
         </article>
       </section>

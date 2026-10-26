@@ -13,7 +13,6 @@ CREATE TABLE usuarios (
     CONSTRAINT uq_usuarios_email UNIQUE (email)
 ) ENGINE=InnoDB;
 
-
 -- =====================================================
 -- TABLA: peliculas
 -- =====================================================
@@ -31,7 +30,6 @@ CREATE TABLE peliculas (
     CONSTRAINT chk_peliculas_duracion
         CHECK (duracion > 0)
 ) ENGINE=InnoDB;
-
 
 -- =====================================================
 -- TABLA: funciones
@@ -56,7 +54,6 @@ CREATE TABLE funciones (
     INDEX idx_funciones_pelicula_fecha (pelicula_id, fecha)
 ) ENGINE=InnoDB;
 
-
 -- =====================================================
 -- TABLA: asientos
 -- =====================================================
@@ -76,7 +73,6 @@ CREATE TABLE asientos (
     CONSTRAINT chk_asientos_numero
         CHECK (numero > 0)
 ) ENGINE=InnoDB;
-
 
 -- =====================================================
 -- TABLA: entradas
@@ -115,7 +111,6 @@ CREATE TABLE entradas (
     INDEX idx_entradas_usuario (usuario_id),
     INDEX idx_entradas_funcion (funcion_id)
 ) ENGINE=InnoDB;
-
 
 -- =====================================================
 -- TABLA: entrada_asientos

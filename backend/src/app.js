@@ -32,6 +32,13 @@ const usuarioRoutes = require("./routes/usuario.routes");
 // a las operaciones administrativas.
 const adminRoutes = require("./routes/admin.routes");
 
+// Importamos las rutas del catálogo
+// de productos de confitería.
+const productoRoutes = require("./routes/producto.routes");
+
+// Importamos las rutas de compras de confitería.
+const compraConfiteriaRoutes = require("./routes/compraConfiteria.routes");
+
 // =====================================================
 // CREACIÓN DE LA APLICACIÓN
 // =====================================================
@@ -97,6 +104,20 @@ app.use("/auth", authRoutes);
 // GET /peliculas
 app.use("/peliculas", peliculaRoutes);
 
+// =====================================================
+// RUTAS DE CONFITERÍA
+// =====================================================
+
+// Registramos el catálogo público de productos.
+//
+// Por ejemplo:
+// router.get("/", ...)
+//
+// se transforma en:
+//
+// GET /productos
+app.use("/productos", productoRoutes);
+
 // Montamos las rutas relacionadas con funciones.
 //
 // Por ejemplo:
@@ -129,6 +150,18 @@ app.use("/entradas", entradaRoutes);
 app.use("/usuarios", usuarioRoutes);
 
 // =====================================================
+// COMPRAS SIMULADAS DE CONFITERÍA
+// =====================================================
+
+// Registramos el endpoint protegido:
+//
+// POST /compras-confiteria
+app.use("/compras-confiteria", compraConfiteriaRoutes);
+
+// Rutas de administración de confitería.
+const adminProductoRoutes = require("./routes/adminProducto.routes");
+
+// =====================================================
 // RUTA DE PRUEBA DE EXPRESS
 // =====================================================
 
@@ -155,6 +188,10 @@ app.get("/api/health", (req, res) => {
 //
 // GET /admin/test
 app.use("/admin", adminRoutes);
+
+// Endpoints exclusivos para administradores.
+app.use("/admin/productos", adminProductoRoutes);
+
 // =====================================================
 // RUTA TEMPORAL DE PRUEBA DE MYSQL
 // =====================================================

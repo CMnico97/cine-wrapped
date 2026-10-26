@@ -1,32 +1,60 @@
 # Cine Wrapped
 
-Plataforma web para un cine que permite consultar películas y funciones, seleccionar asientos, realizar compras simuladas y visualizar estadísticas personales mediante **Cine Wrapped**.
+Plataforma web para **un cine** que permite consultar películas y funciones, seleccionar asientos, realizar compras simuladas de entradas y productos de confitería, y visualizar estadísticas personales mediante **Cine Wrapped**.
 
-> Proyecto académico. No procesa pagos reales ni se conecta a un sistema comercial de cine.
+> **Proyecto académico.** No procesa pagos reales ni se conecta a sistemas comerciales de cine.
 
 ## Tecnologías
 
 - **Frontend:** React, Vite, React Router y CSS.
 - **Backend:** Node.js, Express y API REST.
-- **Base de datos:** MySQL, mediante `mysql2`.
+- **Base de datos:** MySQL mediante `mysql2`.
 - **Seguridad:** autenticación JWT, contraseñas protegidas con `bcrypt` y permisos según rol.
 
 ## Funcionalidades
 
 ### Usuario
+
 - Registro, inicio y cierre de sesión.
 - Consulta de cartelera, detalles de películas y funciones.
 - Consulta y selección de asientos disponibles.
-- Confirmación de compras simuladas y generación de entradas con código único.
-- Historial de entradas.
-- Perfil personal.
-- **Cine Wrapped:** cantidad de películas vistas, minutos acumulados, género más visto, mes más activo y última película.
+- Confirmación de compras simuladas de entradas y generación de entradas con código único.
+- Historial de entradas y perfil personal.
+- **Confitería:** catálogo público de popcorn y bebidas, carrito de compras, selección de cantidades y compra simulada para usuarios autenticados.
+- **Historial de confitería:** consulta de compras realizadas, productos, cantidades, subtotales y total.
+- **Cine Wrapped:** películas vistas, minutos acumulados, género más visto, mes más activo y última película; además, total gastado en confitería, cantidad de compras y producto favorito.
 
 ### Administrador
-- Acceso a panel administrativo según rol.
+
+- Acceso a un panel administrativo según rol.
 - Crear, editar y eliminar películas.
 - Crear, editar y eliminar funciones.
 - Restricción de eliminación de funciones que ya tienen entradas asociadas, para preservar la integridad de datos.
+- **Administrar confitería:** listar todos los productos (incluidos los desactivados), agregar, editar, activar y desactivar productos.
+- El administrador también puede utilizar las funcionalidades normales de usuario, incluida la compra de entradas y confitería.
+
+## Módulo de confitería
+
+La confitería es un módulo **independiente de la compra de entradas**. No requiere seleccionar una película o función para comprar productos.
+
+**Flujo de compra:**
+
+1. Consultar el catálogo de popcorn y bebidas disponibles.
+2. Agregar productos al carrito y ajustar cantidades.
+3. Revisar el total de la compra.
+4. Iniciar sesión si aún no se ha hecho.
+5. Confirmar la compra simulada, sin cobro real.
+6. Consultar el comprobante de confirmación y el historial de compras.
+
+**Reglas principales:**
+
+- El catálogo público muestra solamente productos activos (`disponible = 1`).
+- Solo los usuarios autenticados pueden registrar compras y consultar su historial.
+- Cada historial pertenece al usuario identificado por el JWT; el cliente no decide el `usuario_id`.
+- El backend valida productos, cantidades y disponibilidad, y calcula los importes utilizando los precios almacenados en MySQL.
+- Las compras se registran mediante una transacción que incluye la compra y su detalle.
+- Los productos se desactivan sin eliminarlos físicamente para conservar las referencias del historial.
+- Solo los administradores pueden modificar el catálogo de confitería.
 
 ## Estructura general
 
@@ -47,9 +75,12 @@ cine-wrapped/
 │       ├── pages/
 │       └── services/
 ├── database/
-│   └── schema.sql
+│   ├── schema.sql
+│   └── tienda.sql
 └── README.md
 ```
+
+> La carpeta `database/` debe incluir los scripts necesarios para reproducir **todas** las tablas. Comprueba que `schema.sql` y `tienda.sql` estén actualizados antes de subirlos. Si `tienda.sql` es un script incremental, ejecútalo después del esquema principal y evita duplicar tablas ya creadas.
 
 ## Requisitos previos
 
@@ -63,60 +94,53 @@ cine-wrapped/
 ### 1. Clonar el repositorio
 
 ```bash
-# Reemplaza la URL por la dirección real de tu repositorio.
 git clone URL_DEL_REPOSITORIO
-
-# Ingresa a la carpeta del proyecto.
 cd cine-wrapped
 ```
 
 ### 2. Preparar la base de datos
 
-Crea una base de datos MySQL llamada `cine_db` y ejecuta el script `database/schema.sql` **si ese archivo contiene el esquema actualizado**. Si el repositorio incluye un respaldo SQL de la base de datos, puedes importarlo en su lugar.
+Crea la base de datos MySQL `cine_db`:
 
 ```sql
--- Crea la base de datos si todavía no existe.
 CREATE DATABASE IF NOT EXISTS cine_db
   CHARACTER SET utf8mb4
   COLLATE utf8mb4_unicode_ci;
 ```
 
-> El esquema y los datos de ejemplo son distintos: crear las tablas no necesariamente agrega películas, funciones o asientos. Para probar el flujo de compra deben existir estos registros.
+Ejecuta `database/schema.sql` si contiene el esquema actualizado y, cuando corresponda, `database/tienda.sql` para incorporar las tablas de confitería. Alternativamente, importa un respaldo SQL actualizado. **Verifica el contenido real de los scripts antes de ejecutarlos** y evita aplicar dos veces instrucciones de creación incompatibles.
+
+Las tablas de confitería necesarias son `productos`, `compras_confiteria` y `detalle_compra_confiteria`.
+
+> Crear las tablas no necesariamente carga películas, funciones, asientos ni productos de ejemplo. Para probar las compras deben existir registros apropiados.
 
 ### 3. Configurar y ejecutar el backend
 
 ```bash
-# Entra a la carpeta del servidor.
 cd backend
-
-# Instala las dependencias definidas en package.json.
 npm install
 ```
 
-Crea el archivo `backend/.env` con valores correspondientes a tu instalación local:
+Crea `backend/.env` con los valores de tu instalación local:
 
 ```dotenv
-# Puerto del servidor Express.
 PORT=3000
 
-# Configuración de conexión a MySQL.
 DB_HOST=localhost
 DB_PORT=3306
 DB_USER=root
 DB_PASSWORD=TU_PASSWORD_LOCAL
 DB_NAME=cine_db
 
-# Clave privada para firmar los tokens JWT.
 JWT_SECRET=REEMPLAZAR_POR_UNA_CLAVE_LARGA_Y_ALEATORIA
 JWT_EXPIRES_IN=2h
 ```
 
-**Importante:** verifica los nombres exactos de las variables de conexión que utiliza `backend/src/config/database.js`; si difieren de este ejemplo, utiliza los del código. No subas `.env` a Git.
+**Importante:** verifica los nombres exactos de variables utilizados en `backend/src/config/database.js` y en la configuración de JWT. Si difieren del ejemplo, utiliza los que espera tu código. **Nunca subas `.env` a Git.**
 
-Inicia el servidor con el script disponible en `backend/package.json`:
+Inicia el servidor con el script definido en `backend/package.json`:
 
 ```bash
-# Usa este comando si el proyecto define el script "dev".
 npm run dev
 ```
 
@@ -124,49 +148,63 @@ El backend utiliza normalmente `http://localhost:3000`.
 
 ### 4. Instalar y ejecutar el frontend
 
-En **otra terminal**:
+En **otra terminal**, desde la raíz del repositorio:
 
 ```bash
-# Desde la raíz del repositorio, entra al frontend.
 cd frontend
-
-# Instala sus dependencias.
 npm install
-
-# Inicia el servidor de desarrollo Vite.
 npm run dev
 ```
 
-Abre la dirección que muestre Vite; normalmente es `http://localhost:5173`.
+Abre la dirección indicada por Vite, normalmente `http://localhost:5173`.
 
-> Actualmente el cliente utiliza `http://localhost:3000` como dirección de la API en `frontend/src/services/api.js`. Si cambias el puerto del backend, actualiza también esa URL.
+> Actualmente, el frontend utiliza `http://localhost:3000` como dirección de la API en `frontend/src/services/api.js`. Si cambias el puerto del backend, actualiza también esa URL.
 
 ## Endpoints principales
 
-| Método | Ruta | Función |
-|---|---|---|
-| POST | `/auth/register` | Registrar usuario |
-| POST | `/auth/login` | Iniciar sesión |
-| GET | `/auth/me` | Consultar perfil autenticado |
-| GET | `/peliculas` | Listar películas |
-| GET | `/peliculas/:id` | Consultar película |
-| GET | `/peliculas/:id/funciones` | Listar funciones de una película |
-| GET | `/funciones/:id/asientos` | Consultar disponibilidad de asientos |
-| POST | `/entradas` | Confirmar compra simulada |
-| GET | `/usuarios/me/entradas` | Consultar historial personal |
-| GET | `/usuarios/me/wrapped` | Consultar estadísticas personales |
-| POST | `/admin/peliculas` | Crear película |
-| PUT | `/admin/peliculas/:id` | Editar película |
-| DELETE | `/admin/peliculas/:id` | Eliminar película |
-| POST | `/admin/funciones` | Crear función |
-| PUT | `/admin/funciones/:id` | Editar función |
-| DELETE | `/admin/funciones/:id` | Eliminar función |
+### Autenticación, películas y entradas
 
-Las rutas personales requieren un token JWT válido. Las rutas `/admin` requieren, además, rol `admin`.
+| Método | Ruta                       | Función                                     |
+| ------ | -------------------------- | ------------------------------------------- |
+| POST   | `/auth/register`           | Registrar usuario                           |
+| POST   | `/auth/login`              | Iniciar sesión                              |
+| GET    | `/auth/me`                 | Consultar perfil autenticado                |
+| GET    | `/peliculas`               | Listar películas                            |
+| GET    | `/peliculas/:id`           | Consultar película                          |
+| GET    | `/peliculas/:id/funciones` | Listar funciones de una película            |
+| GET    | `/funciones/:id/asientos`  | Consultar disponibilidad de asientos        |
+| POST   | `/entradas`                | Confirmar compra simulada de entradas       |
+| GET    | `/usuarios/me/entradas`    | Consultar historial de entradas             |
+| GET    | `/usuarios/me/wrapped`     | Consultar estadísticas de cine y confitería |
+
+### Confitería
+
+| Método | Ruta                                  | Función                       | Acceso        |
+| ------ | ------------------------------------- | ----------------------------- | ------------- |
+| GET    | `/productos`                          | Listar productos disponibles  | Público       |
+| POST   | `/compras-confiteria`                 | Confirmar compra simulada     | Autenticado   |
+| GET    | `/compras-confiteria/mis-compras`     | Consultar historial propio    | Autenticado   |
+| GET    | `/admin/productos`                    | Listar todos los productos    | Administrador |
+| POST   | `/admin/productos`                    | Crear producto                | Administrador |
+| PUT    | `/admin/productos/:id`                | Editar producto               | Administrador |
+| PATCH  | `/admin/productos/:id/disponibilidad` | Activar o desactivar producto | Administrador |
+
+### Administración de películas y funciones
+
+| Método | Ruta                   | Función           |
+| ------ | ---------------------- | ----------------- |
+| POST   | `/admin/peliculas`     | Crear película    |
+| PUT    | `/admin/peliculas/:id` | Editar película   |
+| DELETE | `/admin/peliculas/:id` | Eliminar película |
+| POST   | `/admin/funciones`     | Crear función     |
+| PUT    | `/admin/funciones/:id` | Editar función    |
+| DELETE | `/admin/funciones/:id` | Eliminar función  |
+
+Las rutas personales requieren un token JWT válido. Las rutas administrativas requieren, además, rol `admin`. El control de permisos se aplica en el backend mediante `verificarToken` y `verificarAdmin`.
 
 ## Modelo de datos
 
-La base de datos utiliza seis tablas principales:
+### Cine y entradas
 
 - `usuarios`: cuentas y roles.
 - `peliculas`: catálogo cinematográfico.
@@ -177,35 +215,77 @@ La base de datos utiliza seis tablas principales:
 
 La disponibilidad depende de cada función. La restricción única `(funcion_id, asiento_id)` en `entrada_asientos`, junto con validaciones y transacciones en el backend, evita asignar dos veces el mismo asiento para una función.
 
+### Confitería
+
+- `productos`: nombre, descripción, categoría (`popcorn` o `bebida`), precio, imagen y disponibilidad.
+- `compras_confiteria`: usuario, fecha, total y estado de la compra (`confirmada` o `cancelada`).
+- `detalle_compra_confiteria`: productos comprados, cantidad, precio unitario y subtotal.
+
+**Relaciones:** un usuario puede tener muchas compras de confitería; cada compra tiene uno o más detalles; cada detalle referencia un producto. El detalle conserva el precio unitario pagado para que las compras históricas no dependan de cambios posteriores en el precio del catálogo.
+
 ## Cine Wrapped
 
-Las estadísticas se calculan a partir de las entradas **confirmadas** de cada usuario, consultando MySQL. No se almacena un resumen estático en una tabla independiente.
+Las estadísticas se calculan desde MySQL para el usuario autenticado; no se almacena un resumen estático en una tabla independiente.
 
-Métricas incluidas:
-1. Películas vistas.
+### Estadísticas de películas
+
+1. Películas vistas, calculadas desde entradas confirmadas.
 2. Minutos acumulados de películas.
 3. Género más visto.
 4. Mes con mayor actividad.
-5. Última película vista según fecha y hora de función.
+5. Última película según fecha y hora de la función.
 
-## Pruebas realizadas
+### Estadísticas de confitería
 
-- Flujos completos de usuario y administrador.
-- Validación de asientos ocupados y códigos únicos de entradas.
-- Comprobación de autenticación y restricciones de administrador.
-- Pruebas de interfaz responsive.
-- Verificación de funcionamiento en Google Chrome y Microsoft Edge.
+1. **Cantidad de compras:** número de compras confirmadas.
+2. **Total gastado:** suma de los importes de las compras confirmadas, presentada en pesos chilenos (CLP).
+3. **Producto favorito:** producto con mayor cantidad total de unidades compradas. En caso de empate, se utiliza el ID menor como criterio de desempate.
 
-**Resultado de la revisión del MVP:** 24 requisitos funcionales y 12 requisitos no funcionales verificados.
+Estas métricas se devuelven dentro de `wrapped.confiteria` en `GET /usuarios/me/wrapped`:
+
+```json
+{
+  "confiteria": {
+    "cantidadCompras": 4,
+    "totalGastado": 17200,
+    "productoFavorito": {
+      "nombre": "Bebida pequeña",
+      "cantidad": 4
+    }
+  }
+}
+```
+
+> Valores ilustrativos del formato de respuesta. El endpoint también devuelve las estadísticas de películas.
+
+Si el usuario no tiene compras confirmadas, el total y la cantidad son `0`, y el producto favorito es `null`.
+
+## Pruebas y validaciones
+
+Se han trabajado y probado durante el desarrollo:
+
+- Registro e inicio de sesión y acceso por rol.
+- Compra simulada de entradas y consulta de historial.
+- Visualización del catálogo de confitería y funcionamiento del carrito.
+- Confirmación de compras de confitería y consulta del historial personal.
+- Creación de productos por un administrador.
+- Gestión de productos desde el panel administrativo.
+- Integración y visualización de estadísticas de confitería en Cine Wrapped.
+- Comprobaciones de permisos, productos desactivados y acceso al historial propio.
+
+Para una entrega académica, conviene conservar capturas, resultados de consultas y casos de prueba reproducibles. El README describe funcionalidades, pero no sustituye la evidencia formal de pruebas.
+
+> En la revisión anterior del MVP se reportaron **24 requisitos funcionales y 12 no funcionales**. El módulo de confitería amplía ese alcance; si se actualiza la matriz de requisitos, debe revisarse también el conteo total.
 
 ## Alcance y limitaciones
 
-Este sistema representa **un solo cine**, con posibilidad de manejar distintas salas. Las compras son simuladas y no se solicita ni procesa información bancaria. La versión académica no incluye aplicación móvil nativa, integración con pasarelas de pago ni sistemas externos de cine.
+El sistema representa **un solo cine** con varias salas. Las compras de entradas y confitería son simuladas: no se solicita ni procesa información bancaria. La confitería funciona de manera independiente de la compra de entradas. Esta versión académica no incluye aplicación móvil nativa, pasarela de pagos ni integración con sistemas externos de cine.
 
 ## Notas para desarrollo colaborativo
 
-- Cada integrante debe instalar las dependencias en `backend` y `frontend`.
-- Cada integrante necesita su propia configuración local de `.env`.
-- **Clonar el repositorio no copia automáticamente la base de datos MySQL**. Es necesario ejecutar el esquema e importar los datos requeridos.
-- No incluir contraseñas, claves JWT ni archivos `.env` en los commits.
-- Antes de subir cambios, verificar que frontend, backend y base de datos estén funcionando.
+- Cada integrante debe instalar las dependencias de `backend` y `frontend`.
+- Cada integrante necesita su propio archivo `.env` con la configuración local.
+- **Clonar el repositorio no copia automáticamente la base de datos MySQL.** Es necesario ejecutar los scripts actualizados o importar un respaldo.
+- Antes de compartir el proyecto, comprueba que el esquema incluya las tablas de confitería y que existan datos de prueba cuando se necesiten.
+- No incluyas contraseñas, claves JWT, tokens ni archivos `.env` en los commits.
+- Antes de subir cambios, verifica que frontend, backend y base de datos estén funcionando.

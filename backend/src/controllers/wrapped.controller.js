@@ -1,5 +1,8 @@
-// Importamos todas las consultas necesarias
-// para construir Cine Wrapped.
+// =====================================================
+// SERVICIOS DE ESTADÍSTICAS DE PELÍCULAS
+// =====================================================
+
+// Importamos las consultas existentes de Cine Wrapped.
 const {
   obtenerResumenGeneral,
   obtenerGeneroMasVisto,
@@ -8,60 +11,68 @@ const {
 } = require("../services/wrapped.service");
 
 // =====================================================
+// SERVICIO DE ESTADÍSTICAS DE CONFITERÍA
+// =====================================================
+
+// Importamos la nueva función que calcula:
+// - Cantidad de compras.
+// - Total gastado.
+// - Producto favorito.
+const {
+  obtenerWrappedConfiteria,
+} = require("../services/wrappedConfiteria.service");
+
+// =====================================================
 // OBTENER CINE WRAPPED
 // =====================================================
 
-// Este controlador manejará:
-//
+// Endpoint:
 // GET /usuarios/me/wrapped
 //
-// El usuario deberá estar autenticado.
-// Su identificador será obtenido desde el JWT.
+// La ruta debe estar protegida por verificarToken.
+// El ID del usuario se obtiene desde el JWT.
 const obtenerWrapped = async (req, res) => {
   try {
-    // Obtenemos el identificador del usuario
-    // que fue guardado por verificarToken.
+    // Obtenemos el ID del usuario autenticado.
     const usuarioId = req.usuario.id;
 
     // =================================================
-    // EJECUTAR CONSULTAS
+    // EJECUTAR CONSULTAS EN PARALELO
     // =================================================
 
-    // Ejecutamos las consultas de Wrapped.
+    // Ejecutamos las cuatro consultas de películas
+    // y la nueva consulta de confitería.
     //
-    // Promise.all permite ejecutarlas en paralelo
-    // porque ninguna depende del resultado de otra.
-    const [resumen, generoMasVisto, mesMasActivo, ultimaPelicula] =
+    // Promise.all permite obtener todos los datos
+    // sin esperar una consulta antes de iniciar otra.
+    const [resumen, generoMasVisto, mesMasActivo, ultimaPelicula, confiteria] =
       await Promise.all([
         obtenerResumenGeneral(usuarioId),
         obtenerGeneroMasVisto(usuarioId),
         obtenerMesMasActivo(usuarioId),
         obtenerUltimaPelicula(usuarioId),
+        obtenerWrappedConfiteria(usuarioId),
       ]);
 
     // =================================================
-    // CONSTRUIR RESPUESTA
+    // CONSTRUIR RESPUESTA DE CINE WRAPPED
     // =================================================
 
-    // mysql2 puede devolver algunos resultados de
-    // agregación como valores numéricos o strings
-    // dependiendo de la configuración.
-    //
-    // Number() garantiza que nuestra API entregue
-    // números en estas propiedades.
     const wrapped = {
+      // ===============================================
+      // ESTADÍSTICAS DE PELÍCULAS
+      // ===============================================
+
+      // Cantidad de entradas confirmadas.
       peliculasVistas: Number(resumen.peliculas_vistas),
 
+      // Minutos acumulados según las películas vistas.
       minutosEnCine: Number(resumen.minutos_en_cine),
 
-      // Si todavía no existe actividad,
-      // devolvemos null.
+      // Género más visto.
       generoMasVisto: generoMasVisto ? generoMasVisto.genero : null,
 
-      // Guardamos año y mes por separado.
-      //
-      // Esto será más sencillo de presentar
-      // posteriormente desde React.
+      // Mes con mayor actividad.
       mesMasActivo: mesMasActivo
         ? {
             anio: Number(mesMasActivo.anio),
@@ -70,8 +81,7 @@ const obtenerWrapped = async (req, res) => {
           }
         : null,
 
-      // Si el usuario todavía no ha visto ninguna
-      // película, devolvemos null.
+      // Película correspondiente a la función más reciente.
       ultimaPelicula: ultimaPelicula
         ? {
             id: ultimaPelicula.id,
@@ -81,6 +91,20 @@ const obtenerWrapped = async (req, res) => {
             hora: ultimaPelicula.hora,
           }
         : null,
+
+      // ===============================================
+      // ESTADÍSTICAS DE CONFITERÍA
+      // ===============================================
+
+      // Agregamos el resumen de confitería sin
+      // modificar las propiedades existentes.
+      confiteria: {
+        cantidadCompras: confiteria.cantidadCompras,
+
+        totalGastado: confiteria.totalGastado,
+
+        productoFavorito: confiteria.productoFavorito,
+      },
     };
 
     // =================================================
@@ -92,9 +116,8 @@ const obtenerWrapped = async (req, res) => {
       wrapped,
     });
   } catch (error) {
-    // Mostramos el error técnico en la terminal
-    // para facilitar el desarrollo.
-    console.error("Error al obtener Cine Wrapped:", error.message);
+    // Mostramos el error en la terminal del backend.
+    console.error("Error al obtener Cine Wrapped:", error);
 
     return res.status(500).json({
       ok: false,

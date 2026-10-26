@@ -2,12 +2,11 @@
 // en el archivo .env.
 //
 // Lo hacemos antes de iniciar nuestra aplicación.
-require('dotenv').config();
+require("dotenv").config();
 
 // Importamos la aplicación Express que configuramos
 // dentro de src/app.js.
-const app = require('./src/app');
-
+const app = require("./src/app");
 
 // =====================================================
 // CONFIGURACIÓN DEL SERVIDOR
@@ -19,7 +18,6 @@ const app = require('./src/app');
 // utilizaremos el puerto 3000.
 const PORT = process.env.PORT || 3000;
 
-
 // =====================================================
 // INICIO DEL SERVIDOR
 // =====================================================
@@ -29,7 +27,5 @@ const PORT = process.env.PORT || 3000;
 // A partir de este momento Express comenzará
 // a escuchar peticiones en el puerto indicado.
 app.listen(PORT, () => {
-  console.log(
-    `Servidor funcionando en http://localhost:${PORT}`
-  );
+  console.log(`Servidor funcionando en http://localhost:${PORT}`);
 });

@@ -117,6 +117,23 @@ function CineWrapped() {
   };
 
   // ===================================================
+  // FORMATEAR PRECIOS EN PESOS CHILENOS
+  // ===================================================
+
+  // Convertimos los montos recibidos desde MySQL
+  // al formato de moneda utilizado en Chile.
+  //
+  // Ejemplo:
+  // 14300 -> $14.300
+  const formatearPrecio = (monto) => {
+    return new Intl.NumberFormat("es-CL", {
+      style: "currency",
+      currency: "CLP",
+      maximumFractionDigits: 0,
+    }).format(Number(monto) || 0);
+  };
+
+  // ===================================================
   // FORMATEAR FECHA
   // ===================================================
 
@@ -272,6 +289,83 @@ function CineWrapped() {
             <p>Cuando confirmes una entrada, aparecerá en tu Cine Wrapped.</p>
           </>
         )}
+      </section>
+
+      {/* =================================================
+    ESTADÍSTICAS DE CONFITERÍA
+    ================================================= */}
+
+      <section className="wrapped-confiteria">
+        {/* Encabezado de la nueva sección. */}
+        <div className="wrapped-confiteria-encabezado">
+          <p className="etiqueta">Tus compras favoritas</p>
+
+          <h2>Tu Wrapped de confitería 🍿</h2>
+
+          <p>
+            Descubre cuánto has gastado y cuáles son tus productos favoritos de
+            Cine Wrapped.
+          </p>
+        </div>
+
+        {/* ===============================================
+      TARJETAS DE ESTADÍSTICAS
+      =============================================== */}
+
+        {/* Cuadrícula exclusiva para las estadísticas de confitería. */}
+        <div className="wrapped-confiteria-grid">
+          {/* Total gastado en compras confirmadas. */}
+          <article className="wrapped-tarjeta">
+            <span className="wrapped-valor">
+              {formatearPrecio(wrapped.confiteria?.totalGastado)}
+            </span>
+
+            <h3>Total gastado</h3>
+
+            <p>Dinero acumulado en compras confirmadas de confitería.</p>
+          </article>
+
+          {/* Producto más comprado por cantidad de unidades. */}
+          <article className="wrapped-tarjeta">
+            <span className="wrapped-valor">
+              {wrapped.confiteria?.productoFavorito?.nombre || "-"}
+            </span>
+
+            <h3>Tu producto favorito</h3>
+
+            {wrapped.confiteria?.productoFavorito ? (
+              <p>
+                Has comprado {wrapped.confiteria.productoFavorito.cantidad}{" "}
+                unidad(es) de este producto.
+              </p>
+            ) : (
+              <p>Todavía no has comprado productos de confitería.</p>
+            )}
+          </article>
+
+          {/* Cantidad total de compras confirmadas. */}
+          <article className="wrapped-tarjeta">
+            <span className="wrapped-numero">
+              {wrapped.confiteria?.cantidadCompras ?? 0}
+            </span>
+
+            <h3>Compras realizadas</h3>
+
+            <p>Cantidad de compras confirmadas registradas en tu historial.</p>
+          </article>
+        </div>
+
+        {/* Acceso al historial de compras. */}
+        <div className="wrapped-confiteria-acciones">
+          <Link className="boton" to="/mis-compras-confiteria">
+            Ver mis compras
+          </Link>
+
+          {/* Botón para navegar al catálogo de confitería. */}
+          <Link className="boton" to="/confiteria">
+            Ir a confitería
+          </Link>
+        </div>
       </section>
 
       {/* =================================================

@@ -612,3 +612,191 @@ export const obtenerPerfil = async (token) => {
   // para simplificar su uso en React.
   return datos.usuario;
 };
+
+// =====================================================
+// OBTENER PRODUCTOS DE CONFITERÍA
+// =====================================================
+
+// Consulta los productos disponibles desde Express.
+export const obtenerProductosConfiteria = async () => {
+  // Realizamos la petición al endpoint público.
+  const respuesta = await fetch(`${API_URL}/productos`);
+
+  // Convertimos la respuesta a un objeto JavaScript.
+  const datos = await respuesta.json();
+
+  // Comprobamos si ocurrió algún error.
+  if (!respuesta.ok) {
+    throw new Error(datos.message || "No fue posible cargar la confitería");
+  }
+
+  // Devolvemos directamente el arreglo de productos.
+  return datos.productos;
+};
+
+// =====================================================
+// CREAR COMPRA SIMULADA DE CONFITERÍA
+// =====================================================
+
+// Recibe los productos seleccionados y el JWT.
+// El backend se encarga de validar los productos,
+// consultar los precios y registrar la compra.
+export const crearCompraConfiteria = async (productos, token) => {
+  // Enviamos la compra al endpoint protegido.
+  const respuesta = await fetch(`${API_URL}/compras-confiteria`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+
+      // Enviamos el JWT para autenticar al usuario.
+      Authorization: `Bearer ${token}`,
+    },
+
+    // Enviamos solamente identificadores y cantidades.
+    // Nunca enviamos precios ni totales desde React.
+    body: JSON.stringify({
+      productos,
+    }),
+  });
+
+  // Convertimos la respuesta del servidor a JSON.
+  const datos = await respuesta.json();
+
+  // Si el servidor rechaza la compra,
+  // mostramos el mensaje recibido.
+  if (!respuesta.ok) {
+    const error = new Error(
+      datos.message || "No fue posible realizar la compra",
+    );
+
+    // Conservamos el código HTTP para distinguir
+    // errores de autenticación de otros errores.
+    error.status = respuesta.status;
+
+    throw error;
+  }
+
+  // Devolvemos los datos de la compra confirmada.
+  return datos;
+};
+
+// =====================================================
+// OBTENER HISTORIAL DE COMPRAS DE CONFITERÍA
+// =====================================================
+
+// Consulta las compras del usuario autenticado.
+// El backend identifica al usuario mediante su JWT.
+export const obtenerMisComprasConfiteria = async (token) => {
+  const respuesta = await fetch(`${API_URL}/compras-confiteria/mis-compras`, {
+    method: "GET",
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  // Convertimos la respuesta del backend a JSON.
+  const datos = await respuesta.json();
+
+  // Controlamos los posibles errores.
+  if (!respuesta.ok) {
+    const error = new Error(
+      datos.message || "No fue posible obtener tus compras",
+    );
+
+    error.status = respuesta.status;
+    throw error;
+  }
+
+  // Devolvemos las compras con sus productos.
+  return datos.compras;
+};
+
+// =====================================================
+// ADMINISTRACIÓN DE PRODUCTOS DE CONFITERÍA
+// =====================================================
+
+// Consulta todos los productos, incluidos los desactivados.
+export const obtenerProductosAdmin = async (token) => {
+  const respuesta = await fetch(`${API_URL}/admin/productos`, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  const datos = await respuesta.json();
+
+  if (!respuesta.ok) {
+    throw new Error(datos.message || "No fue posible cargar los productos");
+  }
+
+  return datos.productos;
+};
+
+// Registra un nuevo producto de confitería.
+export const crearProductoAdmin = async (producto, token) => {
+  const respuesta = await fetch(`${API_URL}/admin/productos`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(producto),
+  });
+
+  const datos = await respuesta.json();
+
+  if (!respuesta.ok) {
+    throw new Error(datos.message || "No fue posible crear el producto");
+  }
+
+  return datos;
+};
+
+// Actualiza los datos de un producto existente.
+export const editarProductoAdmin = async (id, producto, token) => {
+  const respuesta = await fetch(`${API_URL}/admin/productos/${id}`, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(producto),
+  });
+
+  const datos = await respuesta.json();
+
+  if (!respuesta.ok) {
+    throw new Error(datos.message || "No fue posible editar el producto");
+  }
+
+  return datos;
+};
+
+// Cambia la disponibilidad de un producto sin eliminarlo.
+export const cambiarDisponibilidadProductoAdmin = async (
+  id,
+  disponible,
+  token,
+) => {
+  const respuesta = await fetch(
+    `${API_URL}/admin/productos/${id}/disponibilidad`,
+    {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ disponible }),
+    },
+  );
+
+  const datos = await respuesta.json();
+
+  if (!respuesta.ok) {
+    throw new Error(
+      datos.message || "No fue posible cambiar la disponibilidad",
+    );
+  }
+
+  return datos;
+};

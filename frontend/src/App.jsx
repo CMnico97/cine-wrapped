@@ -30,6 +30,15 @@ import Navbar from "./components/Navbar";
 // Importamos los estilos generales.
 import "./App.css";
 
+// Importamos la página de productos de confitería.
+import Confiteria from "./pages/Confiteria";
+
+// Página de historial de compras de confitería.
+import MisComprasConfiteria from "./pages/misComprasConfiteria";
+
+// Página de administración de confitería.
+import AdminConfiteria from "./pages/adminConfiteria";
+
 // =====================================================
 // APLICACIÓN PRINCIPAL
 // =====================================================
@@ -88,6 +97,15 @@ function App() {
         <Route path="/admin/funciones" element={<AdminFunciones />} />
         {/* Perfil del usuario autenticado. */}
         <Route path="/perfil" element={<Perfil />} />
+        {/* Ruta pública del catálogo de confitería. */}
+        <Route path="/confiteria" element={<Confiteria />} />
+        {/* Historial de compras simuladas de confitería. */}
+        <Route
+          path="/mis-compras-confiteria"
+          element={<MisComprasConfiteria />}
+        />
+        {/* Administración de productos de confitería. */}
+        <Route path="/admin/confiteria" element={<AdminConfiteria />} />
       </Routes>
     </BrowserRouter>
   );
