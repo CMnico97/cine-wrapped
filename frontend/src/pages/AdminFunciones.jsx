@@ -28,11 +28,15 @@ import {
 // FORMULARIO INICIAL
 // =====================================================
 
+// Datos iniciales del formulario de funciones.
 const formularioInicial = {
   pelicula_id: "",
   fecha: "",
   hora: "",
   sala: "",
+
+  // Precio individual de una entrada en pesos chilenos.
+  precio_entrada: "",
 };
 
 // =====================================================
@@ -181,12 +185,12 @@ function AdminFunciones() {
       // esperados por nuestro backend.
       const datosFuncion = {
         pelicula_id: Number(formulario.pelicula_id),
-
         fecha: formulario.fecha,
-
         hora: formulario.hora,
-
         sala: Number(formulario.sala),
+
+        // Convertimos el precio ingresado a número.
+        precio_entrada: Number(formulario.precio_entrada),
       };
 
       // Si existe un id, actualizamos.
@@ -234,6 +238,10 @@ function AdminFunciones() {
       hora: funcion.hora ? funcion.hora.slice(0, 5) : "",
 
       sala: String(funcion.sala || ""),
+
+      // Mostramos el precio actual de la función
+      // para que el administrador pueda modificarlo.
+      precio_entrada: String(funcion.precio_entrada ?? ""),
     });
 
     setError(null);
@@ -379,6 +387,25 @@ function AdminFunciones() {
             />
           </label>
 
+          {/* =================================================
+          PRECIO DE ENTRADA
+          ================================================= */}
+
+          <label>
+            Precio de entrada ($ CLP)
+            <input
+              type="number"
+              name="precio_entrada"
+              value={formulario.precio_entrada}
+              onChange={manejarCambio}
+              placeholder="Ejemplo: 5000"
+              min="1"
+              max="99999999"
+              step="1"
+              required
+            />
+          </label>
+
           <div className="admin-formulario-acciones">
             <button
               type="submit"
@@ -440,6 +467,16 @@ function AdminFunciones() {
                   </p>
 
                   <p>Sala {funcion.sala}</p>
+
+                  {/* Mostramos el precio configurado por el administrador. */}
+                  <p>
+                    <strong>Precio de entrada: </strong>
+                    {new Intl.NumberFormat("es-CL", {
+                      style: "currency",
+                      currency: "CLP",
+                      maximumFractionDigits: 0,
+                    }).format(Number(funcion.precio_entrada))}
+                  </p>
                 </div>
 
                 <div className="admin-pelicula-acciones">

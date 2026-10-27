@@ -128,6 +128,15 @@ const listarAsientosPorFuncion = async (req, res) => {
 
     // Respondemos con información básica de la función
     // y todos sus asientos.
+    // =====================================================
+    // RESPUESTA CON INFORMACIÓN DE LA FUNCIÓN
+    // =====================================================
+
+    // Enviamos los datos de la función, incluyendo
+    // el precio individual de cada entrada.
+    //
+    // React utilizará este precio para mostrar
+    // el subtotal y el total de la compra.
     return res.status(200).json({
       ok: true,
       funcion: {
@@ -136,6 +145,9 @@ const listarAsientosPorFuncion = async (req, res) => {
         fecha: funcion.fecha,
         hora: funcion.hora,
         sala: funcion.sala,
+
+        // Precio configurado por el administrador.
+        precio_entrada: Number(funcion.precio_entrada),
       },
       asientos,
     });

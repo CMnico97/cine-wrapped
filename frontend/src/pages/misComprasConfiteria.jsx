@@ -173,10 +173,47 @@ function MisComprasConfiteria() {
               </div>
 
               {/* Total registrado en MySQL. */}
-              <div className="confiteria-historial-total">
-                <span>Total de la compra</span>
 
-                <strong>{formatearPrecio(compra.total)}</strong>
+              {/* =================================================
+    RESUMEN DE COMPRA Y PUNTOS CINE WRAPPED
+    ================================================= */}
+
+              <div className="confiteria-historial-resumen">
+                <h3>Resumen de compra</h3>
+
+                {/* Mostramos el precio original de los productos.
+      En compras antiguas, subtotal puede ser NULL,
+      por lo que utilizamos total como respaldo. */}
+                <div className="confiteria-historial-detalle">
+                  <span>Subtotal</span>
+
+                  <strong>
+                    {formatearPrecio(compra.subtotal ?? compra.total)}
+                  </strong>
+                </div>
+
+                {/* Puntos utilizados para obtener un descuento. */}
+                <div className="confiteria-historial-detalle">
+                  <span>Puntos utilizados</span>
+
+                  <strong>{compra.puntos_utilizados ?? 0}</strong>
+                </div>
+
+                {/* Descuento aplicado mediante puntos. */}
+                <div className="confiteria-historial-detalle">
+                  <span>Descuento por puntos</span>
+
+                  <strong>
+                    -{formatearPrecio(compra.descuento_puntos ?? 0)}
+                  </strong>
+                </div>
+
+                {/* Total final confirmado por el backend. */}
+                <div className="confiteria-historial-total">
+                  <span>Total pagado</span>
+
+                  <strong>{formatearPrecio(compra.total)}</strong>
+                </div>
               </div>
             </article>
           ))}

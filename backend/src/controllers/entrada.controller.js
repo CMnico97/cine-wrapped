@@ -36,8 +36,24 @@ const crearEntrada = async (req, res) => {
     // esta información dentro de req.usuario.
     const usuarioId = req.usuario.id;
 
-    // Obtenemos los datos enviados por el cliente.
-    const { funcion_id, asientos } = req.body;
+    // Recibimos los datos de la compra.
+    //
+    // puntos_utilizados es opcional.
+    // Si el frontend no lo envía, usamos 0.
+    const { funcion_id, asientos, puntos_utilizados = 0 } = req.body;
+
+    // =================================================
+    // VALIDAR PUNTOS SOLICITADOS
+    // =================================================
+
+    // Los puntos deben ser números enteros
+    // y no pueden ser negativos.
+    if (!Number.isSafeInteger(puntos_utilizados) || puntos_utilizados < 0) {
+      return res.status(400).json({
+        ok: false,
+        message: "La cantidad de puntos utilizados no es válida",
+      });
+    }
 
     // =================================================
     // VALIDAR ID DE LA FUNCIÓN
@@ -175,10 +191,13 @@ const crearEntrada = async (req, res) => {
     //
     // Ahora ejecutamos la operación definitiva mediante
     // una transacción en el servicio.
+    // Registramos la compra enviando también
+    // los puntos que el usuario desea canjear.
     const entrada = await crearEntradaService(
       usuarioId,
       funcionId,
       asientosIds,
+      puntos_utilizados,
     );
 
     // =====================================================
@@ -193,9 +212,62 @@ const crearEntrada = async (req, res) => {
       entrada,
     });
   } catch (error) {
-    // Mostramos el error técnico en la terminal
-    // para facilitar la depuración durante el desarrollo.
+    // Mostramos el error en la terminal del backend.
     console.error("Error al crear la entrada:", error.message);
+
+    // =================================================
+    // ERRORES DEL SISTEMA DE PUNTOS
+    // =================================================
+
+    // Si el usuario no tiene suficientes puntos
+    // o intenta superar el descuento máximo,
+    // devolvemos un error 400.
+    if (error.status === 400) {
+      return res.status(400).json({
+        ok: false,
+        message: error.message,
+      });
+    }
+
+    // =================================================
+    // FUNCIÓN NO ENCONTRADA
+    // =================================================
+
+    // Aquí continúa el código que ya tienes.
+    if (error.code === "FUNCION_NO_EXISTE") {
+      return res.status(404).json({
+        ok: false,
+        message: "La función seleccionada no existe",
+      });
+    }
+
+    // Mantén las demás validaciones existentes...
+
+    // =====================================================
+    // ASIENTOS INVÁLIDOS
+    // =====================================================
+
+    // Se produce cuando un asiento no existe,
+    // está repetido o pertenece a otra sala.
+    if (error.code === "ASIENTOS_INVALIDOS") {
+      return res.status(400).json({
+        ok: false,
+        message: error.message,
+      });
+    }
+
+    // =====================================================
+    // PRECIO O MONTO INVÁLIDO
+    // =====================================================
+
+    // Impedimos registrar compras con precios incorrectos
+    // o montos que superen el límite permitido.
+    if (error.code === "PRECIO_INVALIDO" || error.code === "MONTO_INVALIDO") {
+      return res.status(400).json({
+        ok: false,
+        message: error.message,
+      });
+    }
 
     // ===================================================
     // ASIENTO OCUPADO
@@ -287,6 +359,22 @@ const listarEntradasUsuario = async (req, res) => {
           codigo: row.codigo,
           estado: row.estado,
           fecha_compra: row.fecha_compra,
+
+          // =================================================
+          // INFORMACIÓN ECONÓMICA DE LA COMPRA
+          // =================================================
+
+          // Convertimos los valores DECIMAL de MySQL a números.
+          //
+          // Las entradas antiguas pueden tener NULL porque
+          // fueron creadas antes de implementar los precios.
+          subtotal: row.subtotal === null ? null : Number(row.subtotal),
+
+          puntos_utilizados: Number(row.puntos_utilizados ?? 0),
+
+          descuento_puntos: Number(row.descuento_puntos ?? 0),
+
+          total: row.total === null ? null : Number(row.total),
 
           pelicula: {
             id: row.pelicula_id,

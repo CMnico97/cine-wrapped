@@ -319,22 +319,26 @@ const eliminarPelicula = async (req, res) => {
 // CREAR FUNCIÓN
 // =====================================================
 
-// Controlador correspondiente a:
-//
 // POST /admin/funciones
-//
-// Esta operación solamente puede ser realizada
-// por un usuario administrador.
+// Solo los administradores pueden crear funciones.
 const crearFuncion = async (req, res) => {
   try {
-    // Obtenemos los datos enviados por el administrador.
-    const { pelicula_id, fecha, hora, sala } = req.body;
+    // Obtenemos los datos enviados desde el frontend.
+    const { pelicula_id, fecha, hora, sala, precio_entrada } = req.body;
 
     // =================================================
     // VALIDAR CAMPOS OBLIGATORIOS
     // =================================================
 
-    if (pelicula_id === undefined || !fecha || !hora || sala === undefined) {
+    if (
+      pelicula_id === undefined ||
+      !fecha ||
+      !hora ||
+      sala === undefined ||
+      precio_entrada === undefined ||
+      precio_entrada === null ||
+      precio_entrada === ""
+    ) {
       return res.status(400).json({
         ok: false,
         message: "Faltan datos obligatorios de la función",
@@ -345,8 +349,6 @@ const crearFuncion = async (req, res) => {
     // VALIDAR PELÍCULA
     // =================================================
 
-    // Convertimos el identificador recibido
-    // a un número.
     const peliculaId = Number(pelicula_id);
 
     if (!Number.isInteger(peliculaId) || peliculaId <= 0) {
@@ -356,12 +358,7 @@ const crearFuncion = async (req, res) => {
       });
     }
 
-    // =================================================
-    // COMPROBAR QUE LA PELÍCULA EXISTA
-    // =================================================
-
-    // Ya tenemos este servicio porque lo utilizamos
-    // anteriormente en el CRUD de películas.
+    // Comprobamos que la película exista.
     const pelicula = await obtenerPeliculaPorId(peliculaId);
 
     if (!pelicula) {
@@ -375,8 +372,6 @@ const crearFuncion = async (req, res) => {
     // VALIDAR SALA
     // =================================================
 
-    // En nuestro modelo actual la sala se representa
-    // simplemente mediante un número entero positivo.
     const salaNumero = Number(sala);
 
     if (!Number.isInteger(salaNumero) || salaNumero <= 0) {
@@ -390,13 +385,6 @@ const crearFuncion = async (req, res) => {
     // VALIDAR FECHA
     // =================================================
 
-    // Esperamos una fecha con formato:
-    //
-    // YYYY-MM-DD
-    //
-    // Ejemplo:
-    //
-    // 2026-10-15
     const formatoFecha = /^\d{4}-\d{2}-\d{2}$/;
 
     if (!formatoFecha.test(fecha)) {
@@ -410,16 +398,6 @@ const crearFuncion = async (req, res) => {
     // VALIDAR HORA
     // =================================================
 
-    // Aceptamos:
-    //
-    // HH:MM
-    //
-    // o:
-    //
-    // HH:MM:SS
-    //
-    // y además limitamos las horas a 00-23
-    // y los minutos/segundos a 00-59.
     const formatoHora = /^([01]\d|2[0-3]):[0-5]\d(:[0-5]\d)?$/;
 
     if (!formatoHora.test(hora)) {
@@ -430,14 +408,35 @@ const crearFuncion = async (req, res) => {
     }
 
     // =================================================
+    // VALIDAR PRECIO DE ENTRADA
+    // =================================================
+
+    // El precio debe ser un número entero positivo
+    // expresado en pesos chilenos.
+    const precioEntrada = Number(precio_entrada);
+
+    if (
+      !Number.isSafeInteger(precioEntrada) ||
+      precioEntrada <= 0 ||
+      precioEntrada > 99999999
+    ) {
+      return res.status(400).json({
+        ok: false,
+        message: "El precio debe ser un número entero mayor que 0",
+      });
+    }
+
+    // =================================================
     // CREAR FUNCIÓN
     // =================================================
 
+    // Enviamos el precio al servicio para guardarlo.
     const funcionId = await crearFuncionService(
       peliculaId,
       fecha,
       hora,
       salaNumero,
+      precioEntrada,
     );
 
     // =================================================
@@ -453,6 +452,7 @@ const crearFuncion = async (req, res) => {
         fecha,
         hora,
         sala: salaNumero,
+        precio_entrada: precioEntrada,
       },
     });
   } catch (error) {
@@ -469,19 +469,15 @@ const crearFuncion = async (req, res) => {
 // ACTUALIZAR FUNCIÓN
 // =====================================================
 
-// Controlador correspondiente a:
-//
 // PUT /admin/funciones/:id
-//
 // Permite modificar una función existente.
 const actualizarFuncion = async (req, res) => {
   try {
-    // Obtenemos el identificador de la función
-    // desde la URL.
+    // Obtenemos el ID desde la URL.
     const funcionId = Number(req.params.id);
 
     // =================================================
-    // VALIDAR ID DE LA FUNCIÓN
+    // VALIDAR ID
     // =================================================
 
     if (!Number.isInteger(funcionId) || funcionId <= 0) {
@@ -491,10 +487,7 @@ const actualizarFuncion = async (req, res) => {
       });
     }
 
-    // =================================================
-    // COMPROBAR QUE LA FUNCIÓN EXISTA
-    // =================================================
-
+    // Comprobamos que la función exista.
     const funcionExistente = await obtenerFuncionPorId(funcionId);
 
     if (!funcionExistente) {
@@ -508,13 +501,21 @@ const actualizarFuncion = async (req, res) => {
     // OBTENER DATOS
     // =================================================
 
-    const { pelicula_id, fecha, hora, sala } = req.body;
+    const { pelicula_id, fecha, hora, sala, precio_entrada } = req.body;
 
     // =================================================
     // VALIDAR CAMPOS OBLIGATORIOS
     // =================================================
 
-    if (pelicula_id === undefined || !fecha || !hora || sala === undefined) {
+    if (
+      pelicula_id === undefined ||
+      !fecha ||
+      !hora ||
+      sala === undefined ||
+      precio_entrada === undefined ||
+      precio_entrada === null ||
+      precio_entrada === ""
+    ) {
       return res.status(400).json({
         ok: false,
         message: "Faltan datos obligatorios de la función",
@@ -534,8 +535,6 @@ const actualizarFuncion = async (req, res) => {
       });
     }
 
-    // Comprobamos que la película indicada
-    // realmente exista.
     const pelicula = await obtenerPeliculaPorId(peliculaId);
 
     if (!pelicula) {
@@ -559,10 +558,9 @@ const actualizarFuncion = async (req, res) => {
     }
 
     // =================================================
-    // VALIDIDAR FECHA
+    // VALIDAR FECHA
     // =================================================
 
-    // Esperamos el formato YYYY-MM-DD.
     const formatoFecha = /^\d{4}-\d{2}-\d{2}$/;
 
     if (!formatoFecha.test(fecha)) {
@@ -576,13 +574,29 @@ const actualizarFuncion = async (req, res) => {
     // VALIDAR HORA
     // =================================================
 
-    // Permitimos HH:MM o HH:MM:SS.
     const formatoHora = /^([01]\d|2[0-3]):[0-5]\d(:[0-5]\d)?$/;
 
     if (!formatoHora.test(hora)) {
       return res.status(400).json({
         ok: false,
         message: "La hora debe tener formato HH:MM o HH:MM:SS",
+      });
+    }
+
+    // =================================================
+    // VALIDAR PRECIO
+    // =================================================
+
+    const precioEntrada = Number(precio_entrada);
+
+    if (
+      !Number.isSafeInteger(precioEntrada) ||
+      precioEntrada <= 0 ||
+      precioEntrada > 99999999
+    ) {
+      return res.status(400).json({
+        ok: false,
+        message: "El precio debe ser un número entero mayor que 0",
       });
     }
 
@@ -596,6 +610,7 @@ const actualizarFuncion = async (req, res) => {
       fecha,
       hora,
       salaNumero,
+      precioEntrada,
     );
 
     // =================================================
@@ -611,6 +626,7 @@ const actualizarFuncion = async (req, res) => {
         fecha,
         hora,
         sala: salaNumero,
+        precio_entrada: precioEntrada,
       },
     });
   } catch (error) {

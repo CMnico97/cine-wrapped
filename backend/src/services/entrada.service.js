@@ -11,6 +11,15 @@ const crypto = require("crypto");
 // exclusiva durante la transacción.
 const pool = require("../config/database");
 
+// Importamos las funciones del sistema de puntos.
+// Permiten consultar el saldo, calcular descuentos
+// y registrar los puntos de cada compra.
+const {
+  obtenerBilleteraBloqueada,
+  calcularCanje,
+  registrarPuntosCompra,
+} = require("./puntos.service");
+
 // =====================================================
 // OBTENER ASIENTOS POR IDS
 // =====================================================
@@ -67,7 +76,16 @@ const obtenerAsientosOcupados = async (funcionId, asientosIds) => {
 // usuarioId  → usuario autenticado.
 // funcionId  → función seleccionada.
 // asientosIds → asientos seleccionados.
-const crearEntrada = async (usuarioId, funcionId, asientosIds) => {
+// Recibimos los puntos que el usuario desea canjear.
+//
+// Por defecto usamos 0 para mantener funcionando
+// las compras que todavía no envían puntos.
+const crearEntrada = async (
+  usuarioId,
+  funcionId,
+  asientosIds,
+  puntosSolicitados = 0,
+) => {
   // Obtenemos una conexión específica del pool.
   //
   // Todas las operaciones de la transacción deben
@@ -80,6 +98,150 @@ const crearEntrada = async (usuarioId, funcionId, asientosIds) => {
     // =================================================
 
     await connection.beginTransaction();
+
+    // =====================================================
+    // OBTENER EL PRECIO DE LA FUNCIÓN
+    // =====================================================
+
+    // Consultamos el precio directamente en MySQL.
+    // No utilizamos un precio enviado desde el frontend,
+    // porque podría ser manipulado por el usuario.
+    const [funciones] = await connection.query(
+      `
+    SELECT
+      id,
+      sala,
+      precio_entrada
+    FROM funciones
+    WHERE id = ?
+    FOR UPDATE
+  `,
+      [funcionId],
+    );
+
+    // Verificamos que la función exista.
+    if (funciones.length === 0) {
+      const error = new Error("La función seleccionada no existe");
+      error.code = "FUNCION_NO_EXISTE";
+      throw error;
+    }
+
+    // Obtenemos los datos de la función.
+    const funcion = funciones[0];
+
+    // Validamos que se hayan seleccionado asientos.
+    if (
+      !Array.isArray(asientosIds) ||
+      asientosIds.length === 0 ||
+      !asientosIds.every((id) => Number.isSafeInteger(id) && id > 0) ||
+      new Set(asientosIds).size !== asientosIds.length
+    ) {
+      const error = new Error("Los asientos seleccionados no son válidos");
+      error.code = "ASIENTOS_INVALIDOS";
+      throw error;
+    }
+
+    // Obtenemos el precio de una entrada.
+    const precioEntrada = Number(funcion.precio_entrada);
+
+    // Validamos el precio registrado.
+    if (!Number.isSafeInteger(precioEntrada) || precioEntrada <= 0) {
+      const error = new Error("El precio de la función no es válido");
+      error.code = "PRECIO_INVALIDO";
+      throw error;
+    }
+
+    // Calculamos la cantidad de entradas.
+    const cantidadEntradas = asientosIds.length;
+
+    // Calculamos el subtotal.
+    const subtotal = precioEntrada * cantidadEntradas;
+
+    // Verificamos que el monto sea seguro y pueda
+    // almacenarse en DECIMAL(10,2) de MySQL.
+    if (!Number.isSafeInteger(subtotal) || subtotal > 99999999) {
+      const error = new Error(
+        "El total de la compra supera el monto permitido",
+      );
+
+      error.code = "MONTO_INVALIDO";
+      throw error;
+    }
+
+    // =================================================
+    // CALCULAR DESCUENTO Y PUNTOS DE LA COMPRA
+    // =================================================
+
+    // Consultamos y bloqueamos la billetera del usuario.
+    //
+    // Utilizamos la misma conexión de la transacción
+    // para impedir que dos compras gasten los mismos puntos.
+    const saldoDisponible = await obtenerBilleteraBloqueada(
+      connection,
+      usuarioId,
+    );
+
+    // Calculamos el descuento y los puntos ganados.
+    //
+    // El servicio de puntos comprueba:
+    // - Que el saldo sea suficiente.
+    // - Que el descuento no supere el 50%.
+    // - Que los puntos solicitados sean válidos.
+    const calculo = calcularCanje(subtotal, puntosSolicitados, saldoDisponible);
+
+    // Guardamos los valores calculados para utilizarlos
+    // en el INSERT de la entrada y en la respuesta.
+    const puntosUtilizados = calculo.puntosUtilizados;
+    const descuentoPuntos = calculo.descuento;
+    const total = calculo.total;
+    const puntosGanados = calculo.puntosGanados;
+
+    // =================================================
+    // VALIDAR ASIENTOS DE LA SALA
+    // =================================================
+
+    // Consultamos los asientos seleccionados
+    // utilizando la misma conexión de la transacción.
+    //
+    // FOR UPDATE bloquea estos registros mientras
+    // procesamos la compra.
+    const [asientosValidos] = await connection.query(
+      `
+        SELECT
+          id,
+          sala,
+          fila,
+          numero
+        FROM asientos
+        WHERE id IN (?)
+        FOR UPDATE
+      `,
+      [asientosIds],
+    );
+
+    // Comprobamos que todos los asientos enviados
+    // realmente existan en la base de datos.
+    if (asientosValidos.length !== asientosIds.length) {
+      const error = new Error("Uno o más asientos seleccionados no existen");
+
+      error.code = "ASIENTOS_INVALIDOS";
+      throw error;
+    }
+
+    // Comprobamos que todos los asientos pertenezcan
+    // a la misma sala de la función seleccionada.
+    const asientoDeOtraSala = asientosValidos.some(
+      (asiento) => Number(asiento.sala) !== Number(funcion.sala),
+    );
+
+    if (asientoDeOtraSala) {
+      const error = new Error(
+        "Uno o más asientos no pertenecen a la sala de esta función",
+      );
+
+      error.code = "ASIENTOS_INVALIDOS";
+      throw error;
+    }
 
     // =================================================
     // COMPROBAR DISPONIBILIDAD NUEVAMENTE
@@ -128,25 +290,35 @@ const crearEntrada = async (usuarioId, funcionId, asientosIds) => {
     // CINE-550e8400-e29b-41d4-a716-446655440000
     const codigo = `CINE-${crypto.randomUUID()}`;
 
-    // =================================================
-    // CREAR ENTRADA
-    // =================================================
+    // =====================================================
+    // CREAR ENTRADA CON INFORMACIÓN DE PRECIOS
+    // =====================================================
 
-    // Registramos la entrada como confirmada.
-    //
-    // fecha_compra se genera automáticamente en MySQL
-    // porque la columna utiliza CURRENT_TIMESTAMP.
+    // Guardamos el subtotal y el total final
+    // para conservar el valor histórico de la compra.
     const [resultadoEntrada] = await connection.query(
       `
-        INSERT INTO entradas (
-          usuario_id,
-          funcion_id,
-          codigo,
-          estado
-        )
-        VALUES (?, ?, ?, 'confirmada')
-      `,
-      [usuarioId, funcionId, codigo],
+    INSERT INTO entradas (
+      usuario_id,
+      funcion_id,
+      codigo,
+      estado,
+      subtotal,
+      puntos_utilizados,
+      descuento_puntos,
+      total
+    )
+    VALUES (?, ?, ?, 'confirmada', ?, ?, ?, ?)
+  `,
+      [
+        usuarioId,
+        funcionId,
+        codigo,
+        subtotal,
+        puntosUtilizados,
+        descuentoPuntos,
+        total,
+      ],
     );
 
     // MySQL devuelve el identificador generado
@@ -191,6 +363,26 @@ const crearEntrada = async (usuarioId, funcionId, asientosIds) => {
     );
 
     // =================================================
+    // REGISTRAR LOS PUNTOS DE LA COMPRA
+    // =================================================
+
+    // Registramos los puntos utilizados y ganados.
+    //
+    // "entrada" identifica el origen de los movimientos.
+    // entradaId corresponde a la entrada recién creada.
+    //
+    // Como utilizamos la misma conexión, si falla
+    // el registro de puntos, también se revertirá
+    // la compra y la asignación de asientos.
+    await registrarPuntosCompra(
+      connection,
+      usuarioId,
+      "entrada",
+      entradaId,
+      calculo,
+    );
+
+    // =================================================
     // CONFIRMAR TRANSACCIÓN
     // =====================================================
 
@@ -200,10 +392,12 @@ const crearEntrada = async (usuarioId, funcionId, asientosIds) => {
     // COMMIT hace permanentes los cambios.
     await connection.commit();
 
-    // =================================================
-    // DEVOLVER RESULTADO
+    // =====================================================
+    // DEVOLVER RESULTADO DE LA COMPRA
     // =====================================================
 
+    // Devolvemos la entrada confirmada y los puntos
+    // obtenidos por esta compra.
     return {
       id: entradaId,
       usuario_id: usuarioId,
@@ -211,6 +405,17 @@ const crearEntrada = async (usuarioId, funcionId, asientosIds) => {
       codigo,
       estado: "confirmada",
       asientos: asientosIds,
+
+      // Información económica.
+      precio_entrada: precioEntrada,
+      cantidad_entradas: cantidadEntradas,
+      subtotal,
+      puntos_utilizados: puntosUtilizados,
+      descuento_puntos: descuentoPuntos,
+      total,
+
+      // Puntos acumulados por la compra.
+      puntos_ganados: puntosGanados,
     };
   } catch (error) {
     // =================================================
@@ -259,6 +464,11 @@ const obtenerEntradasPorUsuario = async (usuarioId) => {
         e.codigo,
         e.estado,
         e.fecha_compra,
+
+        e.subtotal,
+        e.puntos_utilizados,
+        e.descuento_puntos,
+        e.total,
 
         p.id AS pelicula_id,
         p.titulo AS pelicula_titulo,

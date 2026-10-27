@@ -1,10 +1,21 @@
 const pool = require("../config/database");
 
+// Importamos las operaciones del programa de puntos.
+const {
+  obtenerBilleteraBloqueada,
+  calcularCanje,
+  registrarPuntosCompra,
+} = require("./puntos.service");
+
 // =====================================================
 // REGISTRAR COMPRA SIMULADA DE CONFITERÍA
 // =====================================================
 
-const registrarCompraConfiteria = async (usuarioId, productos) => {
+const registrarCompraConfiteria = async (
+  usuarioId,
+  productos,
+  puntosSolicitados = 0,
+) => {
   // Reservamos una conexión del pool para que
   // todas las operaciones utilicen la misma transacción.
   const conexion = await pool.getConnection();
@@ -46,13 +57,40 @@ const registrarCompraConfiteria = async (usuarioId, productos) => {
         throw error;
       }
 
-      // Calculamos los importes en centavos para evitar
-      // errores de precisión con números decimales.
+      // =================================================
+      // VALIDAR PRECIO Y CALCULAR SUBTOTAL DEL PRODUCTO
+      // =================================================
+
+      // Convertimos el precio almacenado en MySQL a centavos.
       const precioCentavos = Math.round(Number(producto.precio) * 100);
 
+      // Comprobamos que el precio sea válido y positivo.
+      if (!Number.isSafeInteger(precioCentavos) || precioCentavos <= 0) {
+        const error = new Error("El precio del producto no es válido");
+        error.status = 400;
+        throw error;
+      }
+
+      // Calculamos el subtotal del producto.
       const subtotalCentavos = precioCentavos * item.cantidad;
 
+      // Comprobamos que el cálculo no supere
+      // el rango seguro de JavaScript.
+      if (!Number.isSafeInteger(subtotalCentavos)) {
+        const error = new Error("El subtotal del producto es demasiado grande");
+        error.status = 400;
+        throw error;
+      }
+
+      // Sumamos el producto al total acumulado.
       total += subtotalCentavos;
+
+      // Comprobamos que el total acumulado sea seguro.
+      if (!Number.isSafeInteger(total)) {
+        const error = new Error("El total de la compra es demasiado grande");
+        error.status = 400;
+        throw error;
+      }
 
       // Guardamos temporalmente el detalle.
       detalles.push({
@@ -64,17 +102,65 @@ const registrarCompraConfiteria = async (usuarioId, productos) => {
     }
 
     // Convertimos el total a formato DECIMAL.
-    const totalCompra = (total / 100).toFixed(2);
+    // =====================================================
+    // CALCULAR SUBTOTAL Y PUNTOS
+    // =====================================================
+
+    // Convertimos los centavos acumulados a pesos.
+    //
+    // El programa de puntos trabaja con pesos
+    // chilenos enteros, por lo que rechazamos
+    // subtotales con fracciones de peso.
+    if (total % 100 !== 0) {
+      const error = new Error("El subtotal debe expresarse en pesos enteros");
+      error.status = 400;
+      throw error;
+    }
+
+    const subtotal = total / 100;
+
+    // Bloqueamos la billetera del usuario antes
+    // de calcular y aplicar el descuento.
+    const saldoDisponible = await obtenerBilleteraBloqueada(
+      conexion,
+      usuarioId,
+    );
+
+    // Calculamos el canje y los puntos ganados.
+    const calculo = calcularCanje(subtotal, puntosSolicitados, saldoDisponible);
+
+    // Guardamos los importes en formato DECIMAL.
+    const subtotalCompra = subtotal.toFixed(2);
+    const totalCompra = calculo.total.toFixed(2);
+    const descuentoCompra = calculo.descuento.toFixed(2);
 
     // =================================================
     // CREAR COMPRA
     // =================================================
 
+    // =====================================================
+    // CREAR COMPRA CON DESCUENTO DE PUNTOS
+    // =====================================================
+
     const [resultado] = await conexion.query(
-      `INSERT INTO compras_confiteria
-         (usuario_id, total, estado)
-       VALUES (?, ?, 'confirmada')`,
-      [usuarioId, totalCompra],
+      `
+    INSERT INTO compras_confiteria (
+      usuario_id,
+      subtotal,
+      puntos_utilizados,
+      descuento_puntos,
+      total,
+      estado
+    )
+    VALUES (?, ?, ?, ?, ?, 'confirmada')
+  `,
+      [
+        usuarioId,
+        subtotalCompra,
+        calculo.puntosUtilizados,
+        descuentoCompra,
+        totalCompra,
+      ],
     );
 
     const compraId = resultado.insertId;
@@ -99,13 +185,36 @@ const registrarCompraConfiteria = async (usuarioId, productos) => {
       );
     }
 
+    // =====================================================
+    // REGISTRAR LOS MOVIMIENTOS DE PUNTOS
+    // =====================================================
+
+    // Guardamos los puntos utilizados y ganados
+    // dentro de la misma transacción de la compra.
+    await registrarPuntosCompra(
+      conexion,
+      usuarioId,
+      "confiteria",
+      compraId,
+      calculo,
+    );
+
     // Confirmamos todos los cambios.
     await conexion.commit();
 
-    // Devolvemos información de la compra.
+    // =====================================================
+    // DEVOLVER INFORMACIÓN DE LA COMPRA Y LOS PUNTOS
+    // =====================================================
+
+    // Devolvemos los datos económicos de la compra,
+    // incluyendo los puntos utilizados y ganados.
     return {
       id: compraId,
+      subtotal: subtotalCompra,
+      puntos_utilizados: calculo.puntosUtilizados,
+      descuento_puntos: descuentoCompra,
       total: totalCompra,
+      puntos_ganados: calculo.puntosGanados,
       estado: "confirmada",
     };
   } catch (error) {
@@ -125,17 +234,26 @@ const registrarCompraConfiteria = async (usuarioId, productos) => {
 const obtenerHistorialConfiteria = async (usuarioId) => {
   // Consultamos únicamente las compras del usuario
   // autenticado, ordenadas desde la más reciente.
+  // =================================================
+  // CONSULTAR COMPRAS CON INFORMACIÓN DE PUNTOS
+  // =================================================
+
+  // Incluimos subtotal, puntos utilizados y descuento
+  // para mostrarlos posteriormente en React.
   const [compras] = await pool.query(
     `
     SELECT
       id,
       fecha_compra,
+      subtotal,
+      puntos_utilizados,
+      descuento_puntos,
       total,
       estado
     FROM compras_confiteria
     WHERE usuario_id = ?
     ORDER BY fecha_compra DESC, id DESC
-    `,
+  `,
     [usuarioId],
   );
 

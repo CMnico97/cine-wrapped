@@ -162,6 +162,29 @@ function Navbar() {
                 Mi Wrapped
               </NavLink>
 
+              {/* =====================================================
+    SISTEMA DE PUNTOS CINE WRAPPED
+    ===================================================== */}
+
+              {/* Permite consultar el saldo disponible y
+    el historial de puntos acumulados y canjeados.
+
+    Este enlace está dentro de autenticado,
+    por lo que solamente aparece cuando
+    el usuario ha iniciado sesión.
+
+    Funciona tanto para usuarios normales
+    como para administradores. */}
+
+              <NavLink
+                to="/mis-puntos"
+                className={({ isActive }) =>
+                  isActive ? "navbar-link activo" : "navbar-link"
+                }
+              >
+                Mis puntos
+              </NavLink>
+
               {/* Historial de compras de confitería.
     Visible para usuarios autenticados,
     incluidos los administradores. */}

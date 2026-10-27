@@ -13,8 +13,16 @@ const confirmarCompraConfiteria = async (req, res) => {
     // El usuario fue autenticado por verificarToken.
     const usuarioId = req.usuario.id;
 
-    // Obtenemos los productos enviados por React.
-    const { productos } = req.body;
+    // =====================================================
+    // OBTENER PRODUCTOS Y PUNTOS SOLICITADOS
+    // =====================================================
+
+    // Recuperamos los productos del carrito y la cantidad
+    // de puntos que el usuario desea utilizar.
+    //
+    // Si React todavía no envía puntos_utilizados,
+    // utilizamos 0 para mantener las compras actuales.
+    const { productos, puntos_utilizados = 0 } = req.body;
 
     // Comprobamos que el carrito contenga productos.
     if (!Array.isArray(productos) || productos.length === 0) {
@@ -54,8 +62,39 @@ const confirmarCompraConfiteria = async (req, res) => {
       });
     }
 
-    // Registramos la compra mediante el servicio.
-    const compra = await registrarCompraConfiteria(usuarioId, productos);
+    // =====================================================
+    // VALIDAR PUNTOS SOLICITADOS
+    // =====================================================
+
+    // Solo aceptamos números enteros mayores o iguales a 0.
+    //
+    // No permitimos valores negativos, decimales,
+    // textos ni cantidades fuera del rango seguro.
+    if (!Number.isSafeInteger(puntos_utilizados) || puntos_utilizados < 0) {
+      return res.status(400).json({
+        ok: false,
+        message: "La cantidad de puntos utilizados es inválida",
+      });
+    }
+
+    // El saldo disponible y el descuento máximo del 50%
+    // se validarán dentro de puntos.service.js.
+    //
+    // No confiamos en un saldo enviado por React.
+
+    // =====================================================
+    // REGISTRAR COMPRA CON PUNTOS
+    // =====================================================
+
+    // Enviamos los productos y los puntos solicitados.
+    //
+    // El servicio calculará el descuento, el total
+    // y los puntos ganados dentro de la transacción.
+    const compra = await registrarCompraConfiteria(
+      usuarioId,
+      productos,
+      puntos_utilizados,
+    );
 
     return res.status(201).json({
       ok: true,

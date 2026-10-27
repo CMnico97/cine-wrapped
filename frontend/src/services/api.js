@@ -240,58 +240,69 @@ export const registrarUsuario = async (nombre, email, password) => {
 
   return datos;
 };
+
 // =====================================================
 // CREAR ENTRADA / COMPRA SIMULADA
 // =====================================================
 
-// Esta función realiza la compra simulada
-// enviando la función y los asientos seleccionados.
+// Registra una compra simulada de entradas.
 //
-// Endpoint:
+// Recibe:
+// funcionId: identificador de la función.
+// asientosIds: arreglo de asientos seleccionados.
+// token: JWT del usuario autenticado.
+// puntosUtilizados: puntos que desea canjear.
 //
-// POST /entradas
-//
-// Este endpoint está protegido, por lo que debemos
-// enviar el JWT mediante Authorization.
-export const crearEntrada = async (funcionId, asientosIds, token) => {
-  // Enviamos la petición al backend.
+// Por defecto, puntosUtilizados es 0 para mantener
+// la compatibilidad con las compras anteriores.
+
+export const crearEntrada = async (
+  funcionId,
+  asientosIds,
+  token,
+  puntosUtilizados = 0,
+) => {
+  // Enviamos la compra al backend.
   const respuesta = await fetch(`${API_URL}/entradas`, {
     method: "POST",
 
     headers: {
-      // Indicamos que el cuerpo será JSON.
+      // Indicamos que enviamos información JSON.
       "Content-Type": "application/json",
 
-      // Enviamos el JWT utilizando el formato
-      // esperado por nuestro middleware:
-      //
-      // Authorization: Bearer <token>
+      // Autenticamos al usuario mediante su JWT.
       Authorization: `Bearer ${token}`,
     },
 
-    // El backend espera:
+    // Enviamos los datos necesarios.
     //
-    // {
-    //   funcion_id: 1,
-    //   asientos: [4, 5]
-    // }
+    // El backend calcula los precios y descuentos.
+    // No confiamos en totales enviados desde React.
     body: JSON.stringify({
       funcion_id: funcionId,
       asientos: asientosIds,
+      puntos_utilizados: puntosUtilizados,
     }),
   });
 
-  // Convertimos la respuesta del backend
-  // a un objeto JavaScript.
+  // Convertimos la respuesta del backend a JSON.
   const datos = await respuesta.json();
 
-  // Si la compra falla, utilizamos el mensaje
-  // enviado por Express.
+  // Si ocurre un error, mostramos el mensaje
+  // enviado desde Express.
   if (!respuesta.ok) {
-    throw new Error(datos.message || "No fue posible realizar la compra");
+    const error = new Error(
+      datos.message || "No fue posible realizar la compra",
+    );
+
+    // Guardamos el estado HTTP para poder
+    // distinguir los distintos errores.
+    error.status = respuesta.status;
+
+    throw error;
   }
 
-  // Si todo funciona, devolvemos la respuesta.
+  // Devolvemos la entrada confirmada.
   return datos;
 };
 
@@ -641,7 +652,16 @@ export const obtenerProductosConfiteria = async () => {
 // Recibe los productos seleccionados y el JWT.
 // El backend se encarga de validar los productos,
 // consultar los precios y registrar la compra.
-export const crearCompraConfiteria = async (productos, token) => {
+// Recibimos los productos, el JWT y los puntos
+// que el usuario desea utilizar en la compra.
+//
+// Por defecto usamos 0 para mantener funcionando
+// las compras que no aplican descuentos.
+export const crearCompraConfiteria = async (
+  productos,
+  token,
+  puntosUtilizados = 0,
+) => {
   // Enviamos la compra al endpoint protegido.
   const respuesta = await fetch(`${API_URL}/compras-confiteria`, {
     method: "POST",
@@ -656,6 +676,7 @@ export const crearCompraConfiteria = async (productos, token) => {
     // Nunca enviamos precios ni totales desde React.
     body: JSON.stringify({
       productos,
+      puntos_utilizados: puntosUtilizados,
     }),
   });
 
@@ -799,4 +820,107 @@ export const cambiarDisponibilidadProductoAdmin = async (
   }
 
   return datos;
+};
+
+// =====================================================
+// CONSULTAR PUNTOS DEL USUARIO
+// =====================================================
+
+// Obtiene los puntos disponibles del usuario.
+//
+// Endpoint:
+// GET /usuarios/me/puntos
+//
+// El backend identifica al usuario mediante
+// el JWT recibido en Authorization.
+
+export const obtenerMisPuntos = async (token) => {
+  // Realizamos la petición al backend.
+  const respuesta = await fetch(`${API_URL}/usuarios/me/puntos`, {
+    method: "GET",
+
+    headers: {
+      // Enviamos el JWT del usuario autenticado.
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  // Convertimos la respuesta en un objeto JavaScript.
+  const datos = await respuesta.json();
+
+  // Si la consulta falla, mostramos el mensaje
+  // enviado por el backend.
+  if (!respuesta.ok) {
+    const error = new Error(
+      datos.message || "No fue posible consultar tus puntos",
+    );
+
+    error.status = respuesta.status;
+
+    throw error;
+  }
+
+  // El backend devuelve:
+  //
+  // {
+  //   ok: true,
+  //   puntos: {
+  //     saldo: 120,
+  //     valor_por_punto: 10,
+  //     pesos_por_punto_ganado: 100,
+  //     descuento_maximo_porcentaje: 50
+  //   }
+  // }
+
+  return datos.puntos;
+};
+
+// =====================================================
+// OBTENER HISTORIAL DE MOVIMIENTOS DE PUNTOS
+// =====================================================
+
+// Consulta los puntos acumulados y canjeados
+// por el usuario autenticado.
+//
+// Endpoint:
+// GET /usuarios/me/puntos/movimientos
+//
+// Esta ruta requiere un JWT válido.
+
+export const obtenerMovimientosPuntos = async (token) => {
+  // Enviamos la petición al backend de Express.
+  const respuesta = await fetch(`${API_URL}/usuarios/me/puntos/movimientos`, {
+    method: "GET",
+
+    headers: {
+      // Autenticamos al usuario mediante su JWT.
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  // Convertimos la respuesta recibida a JSON.
+  const datos = await respuesta.json();
+
+  // Comprobamos si el backend devolvió un error.
+  if (!respuesta.ok) {
+    const error = new Error(
+      datos.message || "No fue posible obtener el historial de puntos",
+    );
+
+    // Conservamos el código HTTP para detectar
+    // sesiones expiradas desde React.
+    error.status = respuesta.status;
+
+    throw error;
+  }
+
+  // El backend devuelve:
+  //
+  // {
+  //   ok: true,
+  //   movimientos: [...]
+  // }
+  //
+  // Devolvemos únicamente los movimientos.
+  return datos.movimientos;
 };

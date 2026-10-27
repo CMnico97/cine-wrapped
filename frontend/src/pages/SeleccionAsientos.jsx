@@ -14,7 +14,11 @@ import { Link, useNavigate, useParams } from "react-router-dom";
 //
 // 1. Obtener los asientos.
 // 2. Crear la entrada.
-import { crearEntrada, obtenerAsientosPorFuncion } from "../services/api";
+import {
+  crearEntrada,
+  obtenerAsientosPorFuncion,
+  obtenerMisPuntos,
+} from "../services/api";
 
 // Importamos la función que recupera
 // el JWT guardado después del login.
@@ -58,9 +62,82 @@ function SeleccionAsientos() {
   // con la compra.
   const [errorCompra, setErrorCompra] = useState(null);
 
+  // =====================================================
+  // ESTADOS DEL SISTEMA DE PUNTOS
+  // =====================================================
+
+  // Saldo disponible del usuario autenticado.
+  const [saldoPuntos, setSaldoPuntos] = useState(0);
+
+  // Cantidad de puntos que desea utilizar.
+  const [puntosUtilizados, setPuntosUtilizados] = useState(0);
+
+  // Indica si estamos consultando el saldo.
+  const [cargandoPuntos, setCargandoPuntos] = useState(true);
+
+  // Guardamos errores al consultar la billetera.
+  const [errorPuntos, setErrorPuntos] = useState(null);
+
   // React Router nos proporciona esta función
   // para redirigir al usuario.
   const navigate = useNavigate();
+
+  // =====================================================
+  // FORMATO DE PRECIOS EN PESOS CHILENOS
+  // =====================================================
+
+  // Convierte un número en un precio como $6.000.
+  const formatearPrecio = (valor) => {
+    return new Intl.NumberFormat("es-CL", {
+      style: "currency",
+      currency: "CLP",
+      maximumFractionDigits: 0,
+    }).format(valor);
+  };
+
+  // Obtenemos el precio individual de la función.
+  // Este dato viene desde el backend.
+  const precioEntrada = Number(funcion?.precio_entrada ?? 0);
+
+  // Calculamos cuántos asientos seleccionó el usuario.
+  const cantidadEntradas = asientosSeleccionados.length;
+
+  // Calculamos el subtotal de la compra.
+  const subtotal = precioEntrada * cantidadEntradas;
+
+  // =====================================================
+  // CÁLCULO DE DESCUENTOS POR PUNTOS
+  // =====================================================
+
+  // Cada punto equivale a $10 CLP.
+  const VALOR_PUNTO = 10;
+
+  // El descuento máximo es el 50% del subtotal.
+  const descuentoMaximo = Math.floor(subtotal * 0.5);
+
+  // Convertimos el descuento máximo a puntos.
+  const puntosMaximosPorCompra = Math.floor(descuentoMaximo / VALOR_PUNTO);
+
+  // El usuario solo puede utilizar los puntos
+  // que tiene disponibles y los permitidos por compra.
+  const puntosMaximosUtilizables = Math.min(
+    saldoPuntos,
+    puntosMaximosPorCompra,
+  );
+
+  // Evitamos aplicar más puntos de los permitidos
+  // si el usuario cambia la cantidad de asientos.
+  const puntosAplicados = Math.min(puntosUtilizados, puntosMaximosUtilizables);
+
+  // Calculamos el descuento.
+  const descuentoPuntos = puntosAplicados * VALOR_PUNTO;
+
+  // Calculamos el total final.
+  const total = subtotal - descuentoPuntos;
+
+  // Calculamos los puntos que generaría esta compra.
+  // El backend realizará nuevamente este cálculo.
+  const puntosGanados = Math.floor(total / 100);
 
   // ===================================================
   // CARGAR ASIENTOS
@@ -85,6 +162,58 @@ function SeleccionAsientos() {
 
     cargarAsientos();
   }, [id]);
+
+  // =====================================================
+  // CONSULTAR SALDO DE PUNTOS
+  // =====================================================
+
+  // Consultamos los puntos al entrar a la página.
+  // El usuario debe tener una sesión iniciada.
+  useEffect(() => {
+    let activo = true;
+
+    const cargarPuntos = async () => {
+      const token = obtenerToken();
+
+      // Si el usuario no ha iniciado sesión,
+      // no podemos consultar su billetera.
+      if (!token) {
+        if (activo) {
+          setSaldoPuntos(0);
+          setCargandoPuntos(false);
+        }
+        return;
+      }
+
+      try {
+        // Consultamos el saldo real en MySQL
+        // mediante nuestro endpoint protegido.
+        const puntos = await obtenerMisPuntos(token);
+
+        if (activo) {
+          setSaldoPuntos(Number(puntos.saldo));
+          setErrorPuntos(null);
+        }
+      } catch (errorPeticion) {
+        if (activo) {
+          setSaldoPuntos(0);
+          setErrorPuntos(errorPeticion.message);
+        }
+      } finally {
+        if (activo) {
+          setCargandoPuntos(false);
+        }
+      }
+    };
+
+    cargarPuntos();
+
+    // Evitamos actualizar estados si el componente
+    // se desmonta antes de terminar la petición.
+    return () => {
+      activo = false;
+    };
+  }, []);
 
   // ===================================================
   // SELECCIONAR / DESELECCIONAR ASIENTO
@@ -158,6 +287,7 @@ function SeleccionAsientos() {
         Number(id),
         asientosSeleccionados,
         token,
+        puntosAplicados,
       );
 
       // Si la compra fue realizada correctamente,
@@ -222,12 +352,20 @@ function SeleccionAsientos() {
 
         {/* Mostramos información de la función
             que seleccionó el usuario. */}
+        {/* Mostramos la sala, el horario y el precio. */}
         {funcion && (
-          <p>
-            Sala {funcion.sala}
-            {" · "}
-            {funcion.hora.slice(0, 5)}
-          </p>
+          <div>
+            <p>
+              Sala {funcion.sala}
+              {" · "}
+              {funcion.hora.slice(0, 5)}
+            </p>
+
+            <p>
+              Precio por entrada:{" "}
+              <strong>{formatearPrecio(precioEntrada)}</strong>
+            </p>
+          </div>
         )}
       </header>
 
@@ -327,6 +465,107 @@ function SeleccionAsientos() {
                   </span>
                 ))}
             </div>
+
+            {/* =================================================
+    CANJEAR PUNTOS CINE WRAPPED
+    ================================================= */}
+
+            <div className="canje-puntos">
+              <h3>Tus puntos Cine Wrapped</h3>
+
+              {cargandoPuntos ? (
+                <p>Consultando tus puntos...</p>
+              ) : errorPuntos ? (
+                <p className="mensaje-error">{errorPuntos}</p>
+              ) : (
+                <>
+                  {/* Mostramos el saldo del usuario. */}
+                  <p>
+                    Puntos disponibles: <strong>{saldoPuntos}</strong>
+                  </p>
+
+                  <p>
+                    Cada punto equivale a $10 de descuento. Puedes descontar
+                    hasta el 50% de tu compra.
+                  </p>
+
+                  {/* El usuario puede elegir cuántos puntos canjear. */}
+                  <label htmlFor="puntos-canje">
+                    Puntos que deseas utilizar
+                  </label>
+
+                  <input
+                    id="puntos-canje"
+                    type="number"
+                    min="0"
+                    max={puntosMaximosUtilizables}
+                    step="1"
+                    value={puntosAplicados}
+                    onChange={(evento) => {
+                      const valor = Number(evento.target.value);
+
+                      // Solo permitimos enteros dentro del límite.
+                      if (Number.isSafeInteger(valor)) {
+                        setPuntosUtilizados(
+                          Math.max(
+                            0,
+                            Math.min(valor, puntosMaximosUtilizables),
+                          ),
+                        );
+                      }
+                    }}
+                  />
+
+                  <p>
+                    Máximo permitido en esta compra:{" "}
+                    <strong>{puntosMaximosUtilizables} puntos</strong>
+                  </p>
+
+                  <p>
+                    Descuento aplicado:{" "}
+                    <strong>{formatearPrecio(descuentoPuntos)}</strong>
+                  </p>
+                </>
+              )}
+            </div>
+
+            {/* =================================================
+    RESUMEN ECONÓMICO DE LA COMPRA
+    ================================================= */}
+
+            <div className="resumen-precios">
+              <h3>Resumen de compra</h3>
+
+              <div className="resumen-precio-fila">
+                <span>Precio por entrada</span>
+                <strong>{formatearPrecio(precioEntrada)}</strong>
+              </div>
+
+              <div className="resumen-precio-fila">
+                <span>Cantidad de entradas</span>
+                <strong>{cantidadEntradas}</strong>
+              </div>
+
+              <div className="resumen-precio-fila">
+                <span>Subtotal</span>
+                <strong>{formatearPrecio(subtotal)}</strong>
+              </div>
+
+              <div className="resumen-precio-fila">
+                <span>Descuento por puntos</span>
+                <strong>{formatearPrecio(descuentoPuntos)}</strong>
+              </div>
+
+              <div className="resumen-precio-fila resumen-precio-total">
+                <span>Total a pagar</span>
+                <strong>{formatearPrecio(total)}</strong>
+              </div>
+              {/* Mostramos los puntos que generaría la compra. */}
+              <div className="resumen-precio-fila">
+                <span>Puntos que ganarás</span>
+                <strong>+{puntosGanados}</strong>
+              </div>
+            </div>
           </>
         )}
 
@@ -342,10 +581,16 @@ function SeleccionAsientos() {
           // Ejecutamos la compra al hacer clic.
           onClick={realizarCompra}
           // Deshabilitamos el botón cuando:
-          //
-          // - no hay asientos seleccionados
-          // - ya estamos procesando una compra
-          disabled={asientosSeleccionados.length === 0 || comprando}
+          // - No hay asientos seleccionados.
+          // - Se está procesando una compra.
+          // - Se están consultando los puntos.
+          // - Ocurrió un error al consultar los puntos.
+          disabled={
+            asientosSeleccionados.length === 0 ||
+            comprando ||
+            cargandoPuntos ||
+            Boolean(errorPuntos)
+          }
         >
           {comprando ? "Confirmando..." : "Confirmar compra"}
         </button>

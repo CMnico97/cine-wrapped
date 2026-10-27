@@ -62,8 +62,15 @@ function MisEntradas() {
         // dentro de la propiedad "entradas".
         setEntradas(datos.entradas || []);
       } catch (errorPeticion) {
-        // Guardamos el mensaje recibido
-        // para mostrarlo en pantalla.
+        // Si el JWT expiró o dejó de ser válido,
+        // redirigimos al usuario al login.
+        if (errorPeticion.status === 401) {
+          navigate("/login", { replace: true });
+          return;
+        }
+
+        // Para otros errores mostramos el mensaje
+        // sin eliminar el historial almacenado.
         setError(errorPeticion.message);
       } finally {
         // Indicamos que terminó la carga.
@@ -82,6 +89,22 @@ function MisEntradas() {
   // las fechas en un formato más amigable.
   const formatearFecha = (fecha) => {
     return new Date(fecha).toLocaleDateString("es-CL");
+  };
+
+  // ===================================================
+  // FORMATEAR PRECIOS EN PESOS CHILENOS
+  // ===================================================
+
+  // Convierte valores como 12000 en $12.000.
+  //
+  // La utilizaremos para mostrar los montos
+  // registrados en las compras simuladas.
+  const formatearPrecio = (valor) => {
+    return new Intl.NumberFormat("es-CL", {
+      style: "currency",
+      currency: "CLP",
+      maximumFractionDigits: 0,
+    }).format(Number(valor));
   };
 
   // ===================================================
@@ -199,6 +222,64 @@ function MisEntradas() {
                   </strong>
                 </div>
               </div>
+
+              {/* =================================================
+    RESUMEN ECONÓMICO DE LA ENTRADA
+    ================================================= */}
+
+              {/* Las entradas antiguas tienen subtotal y total
+    en NULL porque se registraron antes de implementar
+    el sistema de precios.
+
+    Por eso, solo mostramos montos cuando el backend
+    dispone de esa información. */}
+
+              {entrada.subtotal != null && entrada.total != null ? (
+                <div className="resumen-precios">
+                  <h3>Resumen de compra</h3>
+
+                  {/* Cantidad de entradas compradas. */}
+                  <div className="resumen-precio-fila">
+                    <span>Cantidad de entradas</span>
+                    <strong>{entrada.asientos?.length ?? 0}</strong>
+                  </div>
+
+                  {/* Precio original antes del descuento. */}
+                  <div className="resumen-precio-fila">
+                    <span>Subtotal</span>
+                    <strong>{formatearPrecio(entrada.subtotal)}</strong>
+                  </div>
+
+                  {/* Descuento aplicado mediante puntos. */}
+                  <div className="resumen-precio-fila">
+                    <span>Descuento por puntos</span>
+                    <strong>
+                      -{formatearPrecio(entrada.descuento_puntos ?? 0)}
+                    </strong>
+                  </div>
+
+                  {/* Puntos canjeados en esta compra. */}
+                  <div className="resumen-precio-fila">
+                    <span>Puntos utilizados</span>
+                    <strong>{entrada.puntos_utilizados ?? 0}</strong>
+                  </div>
+
+                  {/* Total final registrado en MySQL. */}
+                  <div className="resumen-precio-fila resumen-precio-total">
+                    <span>Total pagado</span>
+                    <strong>{formatearPrecio(entrada.total)}</strong>
+                  </div>
+                </div>
+              ) : (
+                // Mensaje para entradas registradas antes
+                // de implementar los precios.
+                <div className="entrada-sin-precio">
+                  <span>
+                    Esta entrada fue registrada antes de implementar el sistema
+                    de precios.
+                  </span>
+                </div>
+              )}
 
               {/* Código único generado por nuestro
                   backend al registrar la entrada. */}

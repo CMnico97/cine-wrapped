@@ -8,6 +8,9 @@ import Cartelera from "./pages/Cartelera";
 import DetallePelicula from "./pages/DetallePelicula";
 import SeleccionAsientos from "./pages/SeleccionAsientos";
 
+// Página del saldo e historial de puntos.
+import MisPuntos from "./pages/MisPuntos";
+
 // Importamos las páginas relacionadas
 // con la autenticación.
 import Login from "./pages/Login";
@@ -106,6 +109,11 @@ function App() {
         />
         {/* Administración de productos de confitería. */}
         <Route path="/admin/confiteria" element={<AdminConfiteria />} />
+        {/* =====================================================
+    SALDO E HISTORIAL DE PUNTOS CINE WRAPPED
+    ===================================================== */}
+
+        <Route path="/mis-puntos" element={<MisPuntos />} />
       </Routes>
     </BrowserRouter>
   );

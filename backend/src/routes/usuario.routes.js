@@ -1,20 +1,33 @@
-// Importamos Express para crear el Router.
+
 const express = require("express");
 
-// Importamos el controlador encargado
-// de obtener el historial de entradas.
-const { listarEntradasUsuario } = require("../controllers/entrada.controller");
+// =====================================================
+// IMPORTAR CONTROLADORES
+// =====================================================
 
-// Importamos el middleware de autenticación.
+// Controlador del historial de entradas.
+const {
+  listarEntradasUsuario,
+} = require("../controllers/entrada.controller");
+
+// Middleware encargado de validar el JWT.
+const {
+  verificarToken,
+} = require("../middleware/auth.middleware");
+
+// Controlador de estadísticas Cine Wrapped.
+const {
+  obtenerWrapped,
+} = require("../controllers/wrapped.controller");
+
+// Controladores del sistema de puntos.
 //
-// Esta ruta contiene información privada del usuario,
-// por lo que solamente podrá acceder alguien
-// que tenga un JWT válido.
-const { verificarToken } = require("../middleware/auth.middleware");
-
-// Importamos el controlador encargado
-// de generar las estadísticas de Cine Wrapped.
-const { obtenerWrapped } = require("../controllers/wrapped.controller");
+// consultarMisPuntos obtiene el saldo actual.
+// consultarMovimientosPuntos obtiene el historial.
+const {
+  consultarMisPuntos,
+  consultarMovimientosPuntos,
+} = require("../controllers/puntos.controller");
 
 // =====================================================
 // CREACIÓN DEL ROUTER
@@ -23,37 +36,60 @@ const { obtenerWrapped } = require("../controllers/wrapped.controller");
 const router = express.Router();
 
 // =====================================================
-// HISTORIAL DE ENTRADAS DEL USUARIO
+// HISTORIAL DE ENTRADAS
 // =====================================================
 
-// Ruta:
-//
 // GET /usuarios/me/entradas
 //
-// Primero ejecutamos verificarToken.
-//
-// Si el JWT es válido, verificarToken guardará:
-//
-// req.usuario.id
-// req.usuario.rol
-//
-// Después se ejecutará listarEntradasUsuario.
-router.get("/me/entradas", verificarToken, listarEntradasUsuario);
+// Solo devuelve las entradas del usuario autenticado.
+router.get(
+  "/me/entradas",
+  verificarToken,
+  listarEntradasUsuario
+);
 
 // =====================================================
-// CINE WRAPPED DEL USUARIO
+// ESTADÍSTICAS CINE WRAPPED
 // =====================================================
 
-// Ruta:
-//
 // GET /usuarios/me/wrapped
 //
-// Esta ruta también está protegida mediante JWT.
+// Devuelve las estadísticas personales del usuario.
+router.get(
+  "/me/wrapped",
+  verificarToken,
+  obtenerWrapped
+);
+
+// =====================================================
+// CONSULTAR SALDO DE PUNTOS
+// =====================================================
+
+// GET /usuarios/me/puntos
 //
-// El usuario no envía su identificador.
-// verificarToken obtiene el usuario directamente
-// desde el token de autenticación.
-router.get("/me/wrapped", verificarToken, obtenerWrapped);
+// Consulta la billetera del usuario autenticado.
+router.get(
+  "/me/puntos",
+  verificarToken,
+  consultarMisPuntos
+);
+
+// =====================================================
+// HISTORIAL DE MOVIMIENTOS DE PUNTOS
+// =====================================================
+
+// GET /usuarios/me/puntos/movimientos
+//
+// Devuelve los movimientos de acumulación y canje
+// realizados en entradas y confitería.
+//
+// El usuario se identifica mediante el JWT,
+// evitando consultar movimientos de otras personas.
+router.get(
+  "/me/puntos/movimientos",
+  verificarToken,
+  consultarMovimientosPuntos
+);
 
 // =====================================================
 // EXPORTACIÓN DEL ROUTER

@@ -1,9 +1,3 @@
-// Importamos herramientas de React Router.
-//
-// Link permite continuar navegando.
-//
-// useLocation permite recuperar la entrada
-// enviada desde SeleccionAsientos.
 import { Link, useLocation } from "react-router-dom";
 
 // =====================================================
@@ -11,21 +5,33 @@ import { Link, useLocation } from "react-router-dom";
 // =====================================================
 
 function CompraConfirmada() {
-  // Obtenemos la información asociada
-  // a la navegación actual.
+  // Recuperamos los datos enviados desde
+  // SeleccionAsientos después de confirmar la compra.
   const location = useLocation();
 
-  // Recuperamos la entrada enviada después
-  // de realizar POST /entradas.
+  // La entrada contiene los datos registrados
+  // por el backend, incluyendo los precios.
   const entrada = location.state?.entrada;
+
+  // ===================================================
+  // FORMATEAR PRECIOS EN PESOS CHILENOS
+  // ===================================================
+
+  // Convierte valores como 12000 en $12.000.
+  const formatearPrecio = (valor) => {
+    return new Intl.NumberFormat("es-CL", {
+      style: "currency",
+      currency: "CLP",
+      maximumFractionDigits: 0,
+    }).format(Number(valor));
+  };
 
   // ===================================================
   // SIN INFORMACIÓN DE COMPRA
   // ===================================================
 
-  // Si alguien entra manualmente a esta URL
-  // sin haber realizado una compra,
-  // no tendremos una entrada disponible.
+  // Si el usuario accede directamente a esta URL,
+  // no tendremos datos de una compra reciente.
   if (!entrada) {
     return (
       <main className="contenedor">
@@ -43,6 +49,23 @@ function CompraConfirmada() {
   }
 
   // ===================================================
+  // DATOS ECONÓMICOS DE LA COMPRA
+  // ===================================================
+
+  // Estos valores provienen del backend.
+  // No recalculamos el precio de la compra,
+  // porque ya fue registrado en MySQL.
+  const precioEntrada = Number(entrada.precio_entrada ?? 0);
+  const cantidadEntradas = Number(
+    entrada.cantidad_entradas ?? entrada.asientos?.length ?? 0,
+  );
+
+  const subtotal = Number(entrada.subtotal ?? 0);
+  const descuentoPuntos = Number(entrada.descuento_puntos ?? 0);
+  const puntosUtilizados = Number(entrada.puntos_utilizados ?? 0);
+  const total = Number(entrada.total ?? 0);
+
+  // ===================================================
   // COMPRA EXITOSA
   // ===================================================
 
@@ -55,36 +78,74 @@ function CompraConfirmada() {
 
         <p>Tu entrada fue registrada correctamente.</p>
 
-        {/* Mostramos información básica de
-            la entrada creada por el backend. */}
+        {/* =============================================
+            INFORMACIÓN DE LA ENTRADA
+            ============================================= */}
+
         <div className="entrada-confirmada">
           <div>
             <span>Código de entrada</span>
-
             <strong>{entrada.codigo}</strong>
           </div>
 
           <div>
             <span>Función</span>
-
             <strong>#{entrada.funcion_id}</strong>
           </div>
 
           <div>
             <span>Estado</span>
-
             <strong>{entrada.estado}</strong>
           </div>
 
           <div>
             <span>Asientos</span>
-
-            <strong>{entrada.asientos.join(", ")}</strong>
+            <strong>{entrada.asientos?.join(", ") ?? "Sin asientos"}</strong>
           </div>
         </div>
 
-        {/* Después de la compra permitimos
-        ir al historial o volver a cartelera. */}
+        {/* =============================================
+            RESUMEN ECONÓMICO
+            ============================================= */}
+
+        <div className="resumen-precios">
+          <h3>Resumen de compra</h3>
+
+          <div className="resumen-precio-fila">
+            <span>Precio por entrada</span>
+            <strong>{formatearPrecio(precioEntrada)}</strong>
+          </div>
+
+          <div className="resumen-precio-fila">
+            <span>Cantidad de entradas</span>
+            <strong>{cantidadEntradas}</strong>
+          </div>
+
+          <div className="resumen-precio-fila">
+            <span>Subtotal</span>
+            <strong>{formatearPrecio(subtotal)}</strong>
+          </div>
+
+          <div className="resumen-precio-fila">
+            <span>Descuento por puntos</span>
+            <strong>{formatearPrecio(descuentoPuntos)}</strong>
+          </div>
+
+          <div className="resumen-precio-fila">
+            <span>Puntos utilizados</span>
+            <strong>{puntosUtilizados}</strong>
+          </div>
+
+          <div className="resumen-precio-fila resumen-precio-total">
+            <span>Total pagado</span>
+            <strong>{formatearPrecio(total)}</strong>
+          </div>
+        </div>
+
+        {/* =============================================
+            ACCIONES
+            ============================================= */}
+
         <div className="acciones-confirmacion">
           <Link className="boton" to="/mis-entradas">
             Ver mis entradas

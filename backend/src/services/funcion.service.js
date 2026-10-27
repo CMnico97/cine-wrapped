@@ -1,24 +1,14 @@
-// Importamos el pool de conexiones a MySQL.
-//
-// Este servicio será responsable de realizar
-// las consultas relacionadas con las funciones
-// disponibles en el cine.
+
 const pool = require("../config/database");
 
 // =====================================================
 // OBTENER FUNCIONES POR PELÍCULA
 // =====================================================
 
-// Esta función obtiene todas las funciones asociadas
-// a una película específica.
-//
-// Recibe como parámetro el identificador de la película.
+// Obtiene las funciones de una película.
+// Incluye el precio de cada entrada para que
+// el usuario pueda verlo antes de comprar.
 const obtenerFuncionesPorPelicula = async (peliculaId) => {
-  // Consultamos la tabla funciones buscando aquellas
-  // que pertenezcan a la película indicada.
-  //
-  // Ordenamos primero por fecha y luego por hora
-  // para mostrar las funciones cronológicamente.
   const [rows] = await pool.query(
     `
       SELECT
@@ -26,7 +16,8 @@ const obtenerFuncionesPorPelicula = async (peliculaId) => {
         pelicula_id,
         fecha,
         hora,
-        sala
+        sala,
+        precio_entrada
       FROM funciones
       WHERE pelicula_id = ?
       ORDER BY fecha ASC, hora ASC
@@ -34,10 +25,6 @@ const obtenerFuncionesPorPelicula = async (peliculaId) => {
     [peliculaId],
   );
 
-  // Devolvemos todas las funciones encontradas.
-  //
-  // Si la película no tiene funciones,
-  // simplemente devolveremos un arreglo vacío.
   return rows;
 };
 
@@ -45,13 +32,9 @@ const obtenerFuncionesPorPelicula = async (peliculaId) => {
 // OBTENER FUNCIÓN POR ID
 // =====================================================
 
-// Esta función busca una función específica
-// utilizando su identificador.
-//
-// La utilizaremos antes de consultar los asientos
-// para comprobar que la función realmente exista.
+// Busca una función por su identificador.
+// También devuelve el precio registrado en MySQL.
 const obtenerFuncionPorId = async (id) => {
-  // Buscamos la función correspondiente al id recibido.
   const [rows] = await pool.query(
     `
       SELECT
@@ -59,17 +42,14 @@ const obtenerFuncionPorId = async (id) => {
         pelicula_id,
         fecha,
         hora,
-        sala
+        sala,
+        precio_entrada
       FROM funciones
       WHERE id = ?
     `,
     [id],
   );
 
-  // Como id es una clave primaria, solamente puede
-  // existir una función con ese identificador.
-  //
-  // Si no existe, rows[0] será undefined.
   return rows[0];
 };
 
@@ -77,20 +57,9 @@ const obtenerFuncionPorId = async (id) => {
 // OBTENER ASIENTOS DE UNA FUNCIÓN
 // =====================================================
 
-// Esta función obtiene todos los asientos correspondientes
-// a la sala donde se realizará una función.
-//
-// Además calcula si cada asiento se encuentra
-// disponible u ocupado para ESA función.
+// Consulta los asientos de la sala y determina
+// cuáles están disponibles para esa función.
 const obtenerAsientosPorFuncion = async (funcionId, sala) => {
-  // Obtenemos los asientos de la sala correspondiente.
-  //
-  // LEFT JOIN nos permite conservar también los asientos
-  // que todavía no están asociados a ninguna entrada.
-  //
-  // Si entrada_asientos contiene una coincidencia para
-  // la función y el asiento, significa que ese asiento
-  // ya está ocupado.
   const [rows] = await pool.query(
     `
       SELECT
@@ -112,8 +81,6 @@ const obtenerAsientosPorFuncion = async (funcionId, sala) => {
     [funcionId, sala],
   );
 
-  // Devolvemos todos los asientos con
-  // su estado de disponibilidad.
   return rows;
 };
 
@@ -121,34 +88,47 @@ const obtenerAsientosPorFuncion = async (funcionId, sala) => {
 // CREAR FUNCIÓN
 // =====================================================
 
-// Esta función registra una nueva función
-// cinematográfica en la base de datos.
+// Registra una nueva función con su precio.
 //
-// Recibe:
-//
-// - peliculaId: película que será proyectada.
-// - fecha: día de la función.
-// - hora: horario de la función.
-// - sala: número de sala.
-//
-// El controlador será responsable de validar
-// estos datos antes de llamar al servicio.
-const crearFuncion = async (peliculaId, fecha, hora, sala) => {
+// Parámetros:
+// peliculaId    → película que se proyectará.
+// fecha         → fecha de la función.
+// hora          → horario de la función.
+// sala          → sala de exhibición.
+// precioEntrada → precio de cada asiento en CLP.
+const crearFuncion = async (
+  peliculaId,
+  fecha,
+  hora,
+  sala,
+  precioEntrada
+) => {
+  // Validamos que el precio sea un entero positivo.
+  const precio = Number(precioEntrada);
+
+  if (!Number.isSafeInteger(precio) || precio <= 0) {
+    const error = new Error(
+      "El precio de la entrada debe ser mayor que cero"
+    );
+    error.code = "PRECIO_INVALIDO";
+    throw error;
+  }
+
+  // Guardamos la función y su precio.
   const [result] = await pool.query(
     `
       INSERT INTO funciones (
         pelicula_id,
         fecha,
         hora,
-        sala
+        sala,
+        precio_entrada
       )
-      VALUES (?, ?, ?, ?)
+      VALUES (?, ?, ?, ?, ?)
     `,
-    [peliculaId, fecha, hora, sala],
+    [peliculaId, fecha, hora, sala, precio],
   );
 
-  // MySQL genera automáticamente el identificador
-  // de la nueva función.
   return result.insertId;
 };
 
@@ -156,17 +136,27 @@ const crearFuncion = async (peliculaId, fecha, hora, sala) => {
 // ACTUALIZAR FUNCIÓN
 // =====================================================
 
-// Esta función actualiza los datos de una función
-// existente en la base de datos.
-//
-// Recibe:
-//
-// - id: identificador de la función.
-// - peliculaId: película asociada.
-// - fecha: fecha de la función.
-// - hora: horario de la función.
-// - sala: número de sala.
-const actualizarFuncion = async (id, peliculaId, fecha, hora, sala) => {
+// Permite modificar los datos de una función,
+// incluido el precio de la entrada.
+const actualizarFuncion = async (
+  id,
+  peliculaId,
+  fecha,
+  hora,
+  sala,
+  precioEntrada
+) => {
+  const precio = Number(precioEntrada);
+
+  // Evitamos guardar precios inválidos.
+  if (!Number.isSafeInteger(precio) || precio <= 0) {
+    const error = new Error(
+      "El precio de la entrada debe ser mayor que cero"
+    );
+    error.code = "PRECIO_INVALIDO";
+    throw error;
+  }
+
   const [result] = await pool.query(
     `
       UPDATE funciones
@@ -174,14 +164,20 @@ const actualizarFuncion = async (id, peliculaId, fecha, hora, sala) => {
         pelicula_id = ?,
         fecha = ?,
         hora = ?,
-        sala = ?
+        sala = ?,
+        precio_entrada = ?
       WHERE id = ?
     `,
-    [peliculaId, fecha, hora, sala, id],
+    [
+      peliculaId,
+      fecha,
+      hora,
+      sala,
+      precio,
+      id,
+    ],
   );
 
-  // Devolvemos la cantidad de filas afectadas
-  // por la operación.
   return result.affectedRows;
 };
 
@@ -189,11 +185,9 @@ const actualizarFuncion = async (id, peliculaId, fecha, hora, sala) => {
 // ELIMINAR FUNCIÓN
 // =====================================================
 
-// Esta función elimina una función existente
-// utilizando su identificador.
-//
-// El controlador comprobará previamente
-// que la función exista.
+// Elimina una función según su identificador.
+// Las restricciones de integridad existentes
+// deben seguir aplicándose.
 const eliminarFuncion = async (id) => {
   const [result] = await pool.query(
     `
@@ -203,7 +197,6 @@ const eliminarFuncion = async (id) => {
     [id],
   );
 
-  // Devolvemos la cantidad de filas eliminadas.
   return result.affectedRows;
 };
 
