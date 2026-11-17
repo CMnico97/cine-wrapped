@@ -2,6 +2,9 @@
 // páginas sin recargar completamente el navegador.
 import { Link } from "react-router-dom";
 
+// NUEVO: carrusel con películas de la cartelera.
+import CarruselPeliculas from "../components/CarruselPeliculas";
+
 // =====================================================
 // PÁGINA DE INICIO
 // =====================================================
@@ -19,17 +22,15 @@ function Inicio() {
           descubre tus estadísticas personales con Cine Wrapped.
         </p>
 
-        {/* Link funciona de manera similar a un enlace,
-            pero React Router realiza la navegación
-            sin recargar toda la aplicación. */}
         <Link className="boton" to="/peliculas">
           Ver cartelera
         </Link>
       </section>
+
+      {/* NUEVO: carrusel debajo del botón. */}
+      <CarruselPeliculas />
     </main>
   );
 }
 
-// Exportamos la página para utilizarla
-// posteriormente desde App.jsx.
 export default Inicio;

@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import PuntosBarra from "../components/PuntosBarra";
 
 // Importamos el servicio que obtiene los productos
 // disponibles desde nuestra API de Express.
@@ -543,7 +544,7 @@ function Confiteria() {
                     <>
                       {/* Saldo disponible del usuario. */}
                       <p>
-                        Puntos disponibles: <strong>{saldoPuntos}</strong>
+                        <PuntosBarra variante="resumen" saldo={saldoPuntos}/>
                       </p>
 
                       <p>

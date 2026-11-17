@@ -1,6 +1,7 @@
 // Importamos herramientas de React para manejar
 // estados y ejecutar la consulta al cargar la página.
 import { useEffect, useState } from "react";
+import PuntosBarra from "../components/PuntosBarra";
 
 // Link permite navegar mediante enlaces.
 //
@@ -481,7 +482,7 @@ function SeleccionAsientos() {
                 <>
                   {/* Mostramos el saldo del usuario. */}
                   <p>
-                    Puntos disponibles: <strong>{saldoPuntos}</strong>
+                    <PuntosBarra variante="resumen" saldo={saldoPuntos}/>
                   </p>
 
                   <p>

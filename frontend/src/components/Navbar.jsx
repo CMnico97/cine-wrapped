@@ -13,60 +13,53 @@ import {
   obtenerUsuario,
 } from "../services/auth";
 
+// NUEVO: barra de puntos y botón de sonido.
+import PuntosBarra from "./PuntosBarra";
+import BotonSonido from "./BotonSonido";
+
 // =====================================================
 // BARRA DE NAVEGACIÓN
 // =====================================================
 
+// Función pequeña para no repetir la clase de cada enlace.
+const claseLink = ({ isActive }) =>
+  isActive ? "navbar-link activo" : "navbar-link";
+
 function Navbar() {
-  // Comprobamos si existe actualmente
-  // una sesión iniciada.
   const autenticado = estaAutenticado();
-
-  // Recuperamos los datos básicos
-  // del usuario almacenado.
   const usuario = obtenerUsuario();
-
-  // Comprobamos si el usuario posee
-  // permisos administrativos.
   const esAdmin = usuario?.rol === "admin";
-
-  // Herramienta de React Router
-  // para realizar redirecciones.
   const navigate = useNavigate();
+  const location = useLocation();
+
+  // Comprobamos si estamos en la página de inicio.
+  const esInicio = location.pathname === "/";
+
+  // NUEVO: en asientos, confitería y perfil la barra de puntos
+  // NO va arriba: se muestra dentro de la propia página.
+  const esPantallaDeCompra =
+    /^\/funciones\/[^/]+\/asientos/.test(location.pathname) ||
+    location.pathname === "/confiteria" ||
+    location.pathname === "/perfil";
 
   // ===================================================
   // REGRESAR A LA PÁGINA ANTERIOR
   // ===================================================
 
   const manejarVolver = () => {
-    // Comprobamos si React Router tiene una página
-    // anterior dentro del historial de navegación.
     if (window.history.state?.idx > 0) {
-      // Regresamos una posición en el historial.
       navigate(-1);
     } else {
-      // Si el usuario abrió la página directamente,
-      // lo enviamos al inicio de Cine Wrapped.
       navigate("/");
     }
   };
-  // Obtenemos la ruta actual de la aplicación.
-  const location = useLocation();
-
-  // Comprobamos si estamos en la página de inicio.
-  const esInicio = location.pathname === "/";
 
   // ===================================================
   // CERRAR SESIÓN
   // ===================================================
 
   const manejarCerrarSesion = () => {
-    // Eliminamos tanto el JWT como los datos
-    // del usuario almacenados localmente.
     cerrarSesion();
-
-    // Después enviamos al usuario
-    // a la página de inicio.
     navigate("/");
   };
 
@@ -77,21 +70,11 @@ function Navbar() {
   return (
     <nav className="navbar">
       <div className="navbar-contenido">
-        {/* Logo / nombre de la aplicación. */}
         <Link className="navbar-logo" to="/">
           CINE WRAPPED
         </Link>
 
-        {/* =============================================
-            ENLACES PRINCIPALES
-            ============================================= */}
-
         <div className="navbar-enlaces">
-          {/* Botón para regresar a la página anterior.
-    Se mantiene junto a los enlaces principales
-    para funcionar también en dispositivos móviles. */}
-          {/* Mostramos el botón Volver solamente
-    cuando NO estamos en la página de inicio. */}
           {!esInicio && (
             <button
               type="button"
@@ -101,111 +84,35 @@ function Navbar() {
               ← Volver
             </button>
           )}
-          <NavLink
-            to="/"
-            className={({ isActive }) =>
-              isActive ? "navbar-link activo" : "navbar-link"
-            }
-          >
+
+          <NavLink to="/" className={claseLink}>
             Inicio
           </NavLink>
 
-          <NavLink
-            to="/peliculas"
-            className={({ isActive }) =>
-              isActive ? "navbar-link activo" : "navbar-link"
-            }
-          >
+          <NavLink to="/peliculas" className={claseLink}>
             Cartelera
           </NavLink>
 
-          {/* Acceso público al catálogo de confitería. */}
-          <NavLink
-            to="/confiteria"
-            className={({ isActive }) =>
-              isActive ? "navbar-link activo" : "navbar-link"
-            }
-          >
+          <NavLink to="/confiteria" className={claseLink}>
             Confitería
           </NavLink>
 
-          {/* Estas opciones solamente tienen sentido
-              cuando existe una sesión iniciada. */}
           {autenticado && (
             <>
-              <NavLink
-                to="/mis-entradas"
-                className={({ isActive }) =>
-                  isActive ? "navbar-link activo" : "navbar-link"
-                }
-              >
+              <NavLink to="/mis-entradas" className={claseLink}>
                 Mis entradas
               </NavLink>
 
-              {/* Acceso a la información
-              de la cuenta actual. */}
-              <NavLink
-                to="/perfil"
-                className={({ isActive }) =>
-                  isActive ? "navbar-link activo" : "navbar-link"
-                }
-              >
+              <NavLink to="/perfil" className={claseLink}>
                 Mi perfil
               </NavLink>
 
-              <NavLink
-                to="/wrapped"
-                className={({ isActive }) =>
-                  isActive ? "navbar-link activo" : "navbar-link"
-                }
-              >
+              <NavLink to="/wrapped" className={claseLink}>
                 Mi Wrapped
               </NavLink>
 
-              {/* =====================================================
-    SISTEMA DE PUNTOS CINE WRAPPED
-    ===================================================== */}
-
-              {/* Permite consultar el saldo disponible y
-    el historial de puntos acumulados y canjeados.
-
-    Este enlace está dentro de autenticado,
-    por lo que solamente aparece cuando
-    el usuario ha iniciado sesión.
-
-    Funciona tanto para usuarios normales
-    como para administradores. */}
-
-              <NavLink
-                to="/mis-puntos"
-                className={({ isActive }) =>
-                  isActive ? "navbar-link activo" : "navbar-link"
-                }
-              >
-                Mis puntos
-              </NavLink>
-
-              {/* Historial de compras de confitería.
-    Visible para usuarios autenticados,
-    incluidos los administradores. */}
-              <NavLink
-                to="/mis-compras-confiteria"
-                className={({ isActive }) =>
-                  isActive ? "navbar-link activo" : "navbar-link"
-                }
-              >
-                Mis compras
-              </NavLink>
-
-              {/* Este enlace solamente aparece
-                  cuando el usuario posee rol admin. */}
               {esAdmin && (
-                <NavLink
-                  to="/admin"
-                  className={({ isActive }) =>
-                    isActive ? "navbar-link activo" : "navbar-link"
-                  }
-                >
+                <NavLink to="/admin" className={claseLink}>
                   Administración
                 </NavLink>
               )}
@@ -213,14 +120,15 @@ function Navbar() {
           )}
         </div>
 
-        {/* =============================================
-            SESIÓN
-            ============================================= */}
-
+        {/* SESIÓN + PUNTOS + SONIDO */}
         <div className="navbar-sesion">
+          {/* NUEVO: barra fina verde de puntos. */}
+          {autenticado && !esPantallaDeCompra && <PuntosBarra />}
+
+          {/* NUEVO: silenciar / activar sonidos. */}
+          <BotonSonido />
+
           {autenticado ? (
-            // Si existe una sesión,
-            // mostramos el botón para cerrarla.
             <button
               type="button"
               className="navbar-cerrar"
@@ -229,8 +137,6 @@ function Navbar() {
               Cerrar sesión
             </button>
           ) : (
-            // Si no existe una sesión,
-            // mostramos el acceso al login.
             <Link className="navbar-login" to="/login">
               Iniciar sesión
             </Link>

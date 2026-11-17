@@ -17,6 +17,50 @@ import { obtenerMisEntradas } from "../services/api";
 // el JWT guardado después del login.
 import { obtenerToken } from "../services/auth";
 
+// NUEVO: menú desplegable para elegir el mes.
+import SelectorMes from "../components/SelectorMes";
+
+// =====================================================
+// FUNCIONES AUXILIARES PARA AGRUPAR POR MES
+// =====================================================
+
+const MESES = [
+  "Enero",
+  "Febrero",
+  "Marzo",
+  "Abril",
+  "Mayo",
+  "Junio",
+  "Julio",
+  "Agosto",
+  "Septiembre",
+  "Octubre",
+  "Noviembre",
+  "Diciembre",
+];
+
+// Devuelve algo como "2026-10" a partir de la fecha de la
+// función. Usamos la misma fecha que se muestra en pantalla.
+const obtenerClaveMes = (fecha) => {
+  const f = new Date(fecha);
+
+  if (!fecha || Number.isNaN(f.getTime())) {
+    return "sin-fecha";
+  }
+
+  return `${f.getFullYear()}-${String(f.getMonth() + 1).padStart(2, "0")}`;
+};
+
+// Convierte "2026-10" en "Octubre 2026".
+const obtenerNombreMes = (clave) => {
+  if (clave === "sin-fecha") {
+    return "Sin fecha";
+  }
+
+  const [anio, mes] = clave.split("-");
+  return `${MESES[Number(mes) - 1]} ${anio}`;
+};
+
 // =====================================================
 // PÁGINA MIS ENTRADAS
 // =====================================================
@@ -32,6 +76,10 @@ function MisEntradas() {
   // Guardamos posibles errores.
   const [error, setError] = useState(null);
 
+  // NUEVO: mes que el usuario eligió para filtrar.
+  // "todos" muestra todo el historial.
+  const [mesElegido, setMesElegido] = useState("todos");
+
   // Utilizamos navigate para realizar
   // redirecciones desde JavaScript.
   const navigate = useNavigate();
@@ -42,8 +90,6 @@ function MisEntradas() {
 
   useEffect(() => {
     const cargarEntradas = async () => {
-      // Recuperamos el JWT almacenado
-      // durante el inicio de sesión.
       const token = obtenerToken();
 
       // Si no existe token, el usuario
@@ -54,12 +100,7 @@ function MisEntradas() {
       }
 
       try {
-        // Consultamos el historial del usuario
-        // actualmente autenticado.
         const datos = await obtenerMisEntradas(token);
-
-        // Nuestro backend devuelve las entradas
-        // dentro de la propiedad "entradas".
         setEntradas(datos.entradas || []);
       } catch (errorPeticion) {
         // Si el JWT expiró o dejó de ser válido,
@@ -69,11 +110,8 @@ function MisEntradas() {
           return;
         }
 
-        // Para otros errores mostramos el mensaje
-        // sin eliminar el historial almacenado.
         setError(errorPeticion.message);
       } finally {
-        // Indicamos que terminó la carga.
         setCargando(false);
       }
     };
@@ -85,8 +123,6 @@ function MisEntradas() {
   // FORMATEAR FECHA
   // ===================================================
 
-  // Creamos una pequeña función para mostrar
-  // las fechas en un formato más amigable.
   const formatearFecha = (fecha) => {
     return new Date(fecha).toLocaleDateString("es-CL");
   };
@@ -95,10 +131,6 @@ function MisEntradas() {
   // FORMATEAR PRECIOS EN PESOS CHILENOS
   // ===================================================
 
-  // Convierte valores como 12000 en $12.000.
-  //
-  // La utilizaremos para mostrar los montos
-  // registrados en las compras simuladas.
   const formatearPrecio = (valor) => {
     return new Intl.NumberFormat("es-CL", {
       style: "currency",
@@ -136,6 +168,51 @@ function MisEntradas() {
   }
 
   // ===================================================
+  // ORDENAR Y AGRUPAR POR MES (NUEVO)
+  // ===================================================
+
+  // Primero las más recientes: por fecha de la función
+  // y, si coincide, por número de entrada.
+  const entradasOrdenadas = [...entradas].sort((a, b) => {
+    const fechaA = new Date(a.funcion?.fecha).getTime() || 0;
+    const fechaB = new Date(b.funcion?.fecha).getTime() || 0;
+
+    return fechaB - fechaA || b.id - a.id;
+  });
+
+  // Agrupamos las entradas dentro de cada mes.
+  const grupos = [];
+
+  entradasOrdenadas.forEach((entrada) => {
+    const clave = obtenerClaveMes(entrada.funcion?.fecha);
+    let grupo = grupos.find((g) => g.clave === clave);
+
+    if (!grupo) {
+      grupo = { clave, entradas: [] };
+      grupos.push(grupo);
+    }
+
+    grupo.entradas.push(entrada);
+  });
+
+  // Si el mes elegido ya no existe, mostramos todo.
+  const mesValido =
+    mesElegido === "todos" || grupos.some((g) => g.clave === mesElegido);
+
+  const gruposVisibles =
+    mesValido && mesElegido !== "todos"
+      ? grupos.filter((g) => g.clave === mesElegido)
+      : grupos;
+
+  // Suma lo pagado en un grupo (ignora entradas antiguas sin total).
+  const sumarTotal = (lista) =>
+    lista.reduce(
+      (acumulado, entrada) =>
+        entrada.total != null ? acumulado + Number(entrada.total) : acumulado,
+      0,
+    );
+
+  // ===================================================
   // INTERFAZ
   // ===================================================
 
@@ -153,10 +230,6 @@ function MisEntradas() {
         </p>
       </header>
 
-      {/* =================================================
-          SIN ENTRADAS
-          ================================================= */}
-
       {entradas.length === 0 ? (
         <section className="sin-entradas">
           <h2>Todavía no tienes entradas</h2>
@@ -170,131 +243,153 @@ function MisEntradas() {
           </Link>
         </section>
       ) : (
-        /* ===============================================
-           LISTA DE ENTRADAS
-           =============================================== */
+        <>
+          {/* =============================================
+              NUEVO: MENÚ DESPLEGABLE PARA FILTRAR POR MES
+              Solo aparecen los meses que tienen entradas.
+              ============================================= */}
+          <div className="filtro-barra">
+            <p className="filtro-info">
+              {mesValido && mesElegido !== "todos"
+                ? `Mostrando ${obtenerNombreMes(mesElegido)}`
+                : "Mostrando todo tu historial"}
+            </p>
 
-        <section className="lista-entradas">
-          {entradas.map((entrada) => (
-            <article className="tarjeta-entrada" key={entrada.id}>
-              {/* Información principal de
-                  la película. */}
-              <div className="entrada-encabezado">
-                <div>
-                  <p className="etiqueta">Entrada #{entrada.id}</p>
+            <SelectorMes
+              valor={mesValido ? mesElegido : "todos"}
+              onChange={setMesElegido}
+              opciones={[
+                {
+                  valor: "todos",
+                  etiqueta: "Todos los meses",
+                  cantidad: entradas.length,
+                },
+                ...grupos.map((grupo) => ({
+                  valor: grupo.clave,
+                  etiqueta: obtenerNombreMes(grupo.clave),
+                  cantidad: grupo.entradas.length,
+                })),
+              ]}
+            />
+          </div>
 
-                  <h2>{entrada.pelicula?.titulo}</h2>
-                </div>
+          {/* =============================================
+              LISTA DE ENTRADAS, AGRUPADAS POR MES
+              ============================================= */}
+          {gruposVisibles.map((grupo) => (
+            <section className="mes-grupo" key={grupo.clave}>
+              <div className="mes-cabecera">
+                <h2 className="mes-titulo">{obtenerNombreMes(grupo.clave)}</h2>
 
-                {/* Mostramos el estado actual
-                    de la entrada. */}
-                <span className="estado-entrada">{entrada.estado}</span>
+                <p className="mes-resumen">
+                  {grupo.entradas.length}{" "}
+                  {grupo.entradas.length === 1 ? "entrada" : "entradas"}
+                  {sumarTotal(grupo.entradas) > 0 &&
+                    ` · ${formatearPrecio(sumarTotal(grupo.entradas))}`}
+                </p>
               </div>
 
-              {/* Información correspondiente
-                  a la función. */}
-              <div className="entrada-datos">
-                <div>
-                  <span>Fecha</span>
+              <div className="lista-entradas">
+                {grupo.entradas.map((entrada) => (
+                  <article className="tarjeta-entrada" key={entrada.id}>
+                    <div className="entrada-encabezado">
+                      <div>
+                        <p className="etiqueta">Entrada #{entrada.id}</p>
 
-                  <strong>{formatearFecha(entrada.funcion?.fecha)}</strong>
-                </div>
+                        <h2>{entrada.pelicula?.titulo}</h2>
+                      </div>
 
-                <div>
-                  <span>Hora</span>
+                      <span className="estado-entrada">{entrada.estado}</span>
+                    </div>
 
-                  <strong>{entrada.funcion?.hora?.slice(0, 5)}</strong>
-                </div>
+                    <div className="entrada-datos">
+                      <div>
+                        <span>Fecha</span>
 
-                <div>
-                  <span>Sala</span>
+                        <strong>{formatearFecha(entrada.funcion?.fecha)}</strong>
+                      </div>
 
-                  <strong>{entrada.funcion?.sala}</strong>
-                </div>
+                      <div>
+                        <span>Hora</span>
 
-                <div>
-                  <span>Asientos</span>
+                        <strong>{entrada.funcion?.hora?.slice(0, 5)}</strong>
+                      </div>
 
-                  <strong>
-                    {entrada.asientos
-                      ?.map((asiento) => `${asiento.fila}${asiento.numero}`)
-                      .join(", ")}
-                  </strong>
-                </div>
+                      <div>
+                        <span>Sala</span>
+
+                        <strong>{entrada.funcion?.sala}</strong>
+                      </div>
+
+                      <div>
+                        <span>Asientos</span>
+
+                        <strong>
+                          {entrada.asientos
+                            ?.map((asiento) => `${asiento.fila}${asiento.numero}`)
+                            .join(", ")}
+                        </strong>
+                      </div>
+                    </div>
+
+                    {/* Las entradas antiguas tienen subtotal y total
+                        en NULL porque se registraron antes de implementar
+                        el sistema de precios. */}
+                    {entrada.subtotal != null && entrada.total != null ? (
+                      <div className="resumen-precios">
+                        <h3>Resumen de compra</h3>
+
+                        <div className="resumen-precio-fila">
+                          <span>Cantidad de entradas</span>
+                          <strong>{entrada.asientos?.length ?? 0}</strong>
+                        </div>
+
+                        <div className="resumen-precio-fila">
+                          <span>Subtotal</span>
+                          <strong>{formatearPrecio(entrada.subtotal)}</strong>
+                        </div>
+
+                        <div className="resumen-precio-fila">
+                          <span>Descuento por puntos</span>
+                          <strong>
+                            -{formatearPrecio(entrada.descuento_puntos ?? 0)}
+                          </strong>
+                        </div>
+
+                        <div className="resumen-precio-fila">
+                          <span>Puntos utilizados</span>
+                          <strong>{entrada.puntos_utilizados ?? 0}</strong>
+                        </div>
+
+                        <div className="resumen-precio-fila resumen-precio-total">
+                          <span>Total pagado</span>
+                          <strong>{formatearPrecio(entrada.total)}</strong>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="entrada-sin-precio">
+                        <span>
+                          Esta entrada fue registrada antes de implementar el
+                          sistema de precios.
+                        </span>
+                      </div>
+                    )}
+
+                    <div className="codigo-entrada">
+                      <span>Código de entrada</span>
+
+                      <strong>{entrada.codigo}</strong>
+                    </div>
+                  </article>
+                ))}
               </div>
-
-              {/* =================================================
-    RESUMEN ECONÓMICO DE LA ENTRADA
-    ================================================= */}
-
-              {/* Las entradas antiguas tienen subtotal y total
-    en NULL porque se registraron antes de implementar
-    el sistema de precios.
-
-    Por eso, solo mostramos montos cuando el backend
-    dispone de esa información. */}
-
-              {entrada.subtotal != null && entrada.total != null ? (
-                <div className="resumen-precios">
-                  <h3>Resumen de compra</h3>
-
-                  {/* Cantidad de entradas compradas. */}
-                  <div className="resumen-precio-fila">
-                    <span>Cantidad de entradas</span>
-                    <strong>{entrada.asientos?.length ?? 0}</strong>
-                  </div>
-
-                  {/* Precio original antes del descuento. */}
-                  <div className="resumen-precio-fila">
-                    <span>Subtotal</span>
-                    <strong>{formatearPrecio(entrada.subtotal)}</strong>
-                  </div>
-
-                  {/* Descuento aplicado mediante puntos. */}
-                  <div className="resumen-precio-fila">
-                    <span>Descuento por puntos</span>
-                    <strong>
-                      -{formatearPrecio(entrada.descuento_puntos ?? 0)}
-                    </strong>
-                  </div>
-
-                  {/* Puntos canjeados en esta compra. */}
-                  <div className="resumen-precio-fila">
-                    <span>Puntos utilizados</span>
-                    <strong>{entrada.puntos_utilizados ?? 0}</strong>
-                  </div>
-
-                  {/* Total final registrado en MySQL. */}
-                  <div className="resumen-precio-fila resumen-precio-total">
-                    <span>Total pagado</span>
-                    <strong>{formatearPrecio(entrada.total)}</strong>
-                  </div>
-                </div>
-              ) : (
-                // Mensaje para entradas registradas antes
-                // de implementar los precios.
-                <div className="entrada-sin-precio">
-                  <span>
-                    Esta entrada fue registrada antes de implementar el sistema
-                    de precios.
-                  </span>
-                </div>
-              )}
-
-              {/* Código único generado por nuestro
-                  backend al registrar la entrada. */}
-              <div className="codigo-entrada">
-                <span>Código de entrada</span>
-
-                <strong>{entrada.codigo}</strong>
-              </div>
-            </article>
+            </section>
           ))}
-        </section>
+        </>
       )}
 
       {/* Permitimos acceder al Cine Wrapped
-    o regresar a la cartelera. */}
+          o regresar a la cartelera. */}
       <div className="acciones-historial">
         <Link className="boton" to="/wrapped">
           Ver mi Cine Wrapped
