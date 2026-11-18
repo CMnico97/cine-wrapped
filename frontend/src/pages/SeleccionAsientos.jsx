@@ -165,6 +165,22 @@ function SeleccionAsientos() {
   }, [id]);
 
   // =====================================================
+  // AGRUPAR ASIENTOS POR FILA
+  // =====================================================
+
+  // Organizamos los asientos recibidos desde el backend.
+  // Cada grupo contendrá los asientos de una misma fila.
+  const asientosPorFila = asientos.reduce((filas, asiento) => {
+    if (!filas[asiento.fila]) {
+      filas[asiento.fila] = [];
+    }
+
+    filas[asiento.fila].push(asiento);
+
+    return filas;
+  }, {});
+
+  // =====================================================
   // CONSULTAR SALDO DE PUNTOS
   // =====================================================
 
@@ -377,45 +393,52 @@ function SeleccionAsientos() {
       <section className="sala-cine">
         <div className="pantalla">PANTALLA</div>
 
-        {/* ===============================================
-            ASIENTOS
-            =============================================== */}
+        {/* =================================================
+    ASIENTOS AGRUPADOS POR FILA
+    ================================================= */}
 
         <div className="asientos">
-          {asientos.map((asiento) => {
-            // Comprobamos si este asiento está
-            // seleccionado actualmente.
-            const seleccionado = asientosSeleccionados.includes(asiento.id);
+          {Object.entries(asientosPorFila)
+            // Ordenamos las filas alfabéticamente.
+            .sort(([filaA], [filaB]) => filaA.localeCompare(filaB))
+            .map(([fila, asientosFila]) => (
+              // Cada fila tiene su propio contenedor.
+              <div className="fila-asientos" key={fila}>
+                {asientosFila
+                  // Ordenamos los asientos por número.
+                  .sort((a, b) => a.numero - b.numero)
+                  .map((asiento) => {
+                    // Comprobamos si está seleccionado.
+                    const seleccionado = asientosSeleccionados.includes(
+                      asiento.id,
+                    );
 
-            // Construimos las clases CSS según
-            // el estado del asiento.
-            let claseAsiento = "asiento";
+                    // Definimos el color según su estado.
+                    let claseAsiento = "asiento";
 
-            if (!asiento.disponible) {
-              claseAsiento += " asiento-ocupado";
-            } else if (seleccionado) {
-              claseAsiento += " asiento-seleccionado";
-            } else {
-              claseAsiento += " asiento-disponible";
-            }
+                    if (!asiento.disponible) {
+                      claseAsiento += " asiento-ocupado";
+                    } else if (seleccionado) {
+                      claseAsiento += " asiento-seleccionado";
+                    } else {
+                      claseAsiento += " asiento-disponible";
+                    }
 
-            return (
-              <button
-                key={asiento.id}
-                type="button"
-                className={claseAsiento}
-                // Un asiento ocupado queda además
-                // deshabilitado a nivel HTML.
-                disabled={!asiento.disponible}
-                // Permitimos seleccionar o quitar
-                // solamente asientos disponibles.
-                onClick={() => alternarAsiento(asiento)}
-              >
-                {asiento.fila}
-                {asiento.numero}
-              </button>
-            );
-          })}
+                    return (
+                      <button
+                        key={asiento.id}
+                        type="button"
+                        className={claseAsiento}
+                        disabled={!asiento.disponible}
+                        onClick={() => alternarAsiento(asiento)}
+                      >
+                        {asiento.fila}
+                        {asiento.numero}
+                      </button>
+                    );
+                  })}
+              </div>
+            ))}
         </div>
 
         {/* ===============================================
@@ -482,7 +505,7 @@ function SeleccionAsientos() {
                 <>
                   {/* Mostramos el saldo del usuario. */}
                   <p>
-                    <PuntosBarra variante="resumen" saldo={saldoPuntos}/>
+                    <PuntosBarra variante="resumen" saldo={saldoPuntos} />
                   </p>
 
                   <p>

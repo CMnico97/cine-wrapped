@@ -46,6 +46,7 @@
   gap: 24px;
 }
 
+
 /* =====================================================
    TARJETA DE PELÍCULA
    ===================================================== */
@@ -57,21 +58,24 @@
   background: #181818;
 }
 
+/* Contenedor de la portada */
 .poster {
   display: flex;
-  min-height: 340px;
+  height: 340px;
   align-items: center;
   justify-content: center;
   background: #242424;
 }
 
+/* Imagen completa, sin recortar */
 .poster img {
   display: block;
   width: 100%;
   height: 340px;
-  object-fit: cover;
+  object-fit: contain;
 }
 
+/* Texto cuando no existe una portada */
 .poster span {
   color: #999;
 }
@@ -87,6 +91,7 @@
 .pelicula-datos {
   color: #aaa;
 }
+
 
 /* =====================================================
    MENSAJES
@@ -2540,4 +2545,20 @@
     padding: 16px;
     gap: 12px;
   }
+}
+
+/* Contenedor general de todas las filas. */
+.asientos {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px; /* Espacio vertical entre cada fila. */
+}
+
+/* Contenedor individual de cada fila. */
+.fila-asientos {
+  display: flex;
+  justify-content: center;
+  gap: 10px; /* Espacio horizontal entre asientos. */
+  width: 100%;
 }

@@ -11,6 +11,35 @@ import { Link } from "react-router-dom";
 import { obtenerPeliculas } from "../services/api";
 
 // =====================================================
+// CONFIGURACIÓN DEL BACKEND
+// =====================================================
+
+// Dirección donde se encuentra nuestro servidor Express.
+const API_URL = "http://localhost:3000";
+
+// =====================================================
+// OBTENER URL DE LA PORTADA
+// =====================================================
+
+// Convierte las rutas locales de las imágenes
+// en direcciones completas para que React pueda mostrarlas.
+const obtenerUrlPoster = (poster) => {
+  // Si la película no tiene portada, devolvemos vacío.
+  if (!poster) {
+    return "";
+  }
+
+  // Si ya tiene una URL completa, la conservamos.
+  // Esto permite mantener compatibilidad con registros antiguos.
+  if (poster.startsWith("http")) {
+    return poster;
+  }
+
+  // Si es una ruta local, agregamos la dirección del backend.
+  return `${API_URL}${poster}`;
+};
+
+// =====================================================
 // PÁGINA DE CARTELERA
 // =====================================================
 
@@ -95,7 +124,9 @@ function Cartelera() {
               <div className="poster">
                 {pelicula.poster ? (
                   <img
-                    src={pelicula.poster}
+                    // Construimos la dirección correcta
+                    // utilizando la función obtenerUrlPoster.
+                    src={obtenerUrlPoster(pelicula.poster)}
                     alt={`Póster de ${pelicula.titulo}`}
                   />
                 ) : (
@@ -119,11 +150,7 @@ function Cartelera() {
                 </p>
 
                 {/* Cada película tendrá una URL
-                    construida utilizando su id.
-
-                    Por ejemplo:
-
-                    /peliculas/1 */}
+                    construida utilizando su id. */}
                 <Link className="boton" to={`/peliculas/${pelicula.id}`}>
                   Ver película
                 </Link>

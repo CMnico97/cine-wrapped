@@ -27,6 +27,22 @@ import obtenerTemaGenero from "../utils/temaGenero";
 import compartirWrapped from "../utils/compartirWrapped";
 import { sonidos } from "../utils/sonido";
 
+// Dirección del backend donde se almacenan las imágenes.
+const API_URL = "http://localhost:3000";
+
+// Convierte la ruta guardada en MySQL
+// en una dirección que el navegador pueda cargar.
+const obtenerUrlPoster = (poster) => {
+  // Si no existe una portada, no devolvemos ninguna ruta.
+  if (!poster) return "";
+
+  // Si ya es una URL completa, la utilizamos directamente.
+  if (poster.startsWith("http")) return poster;
+
+  // Si es una ruta del backend, agregamos la dirección del servidor.
+  return `${API_URL}${poster}`;
+};
+
 // =====================================================
 // PÁGINA CINE WRAPPED
 // =====================================================
@@ -258,7 +274,8 @@ function CineWrapped() {
               Hasta ahora pasaste{" "}
               <strong>{formatearDuracion(wrapped.minutosEnCine)}</strong> en la
               sala y viste <strong>{wrapped.peliculasVistas}</strong>{" "}
-              {Number(wrapped.peliculasVistas) === 1 ? "película" : "películas"}.
+              {Number(wrapped.peliculasVistas) === 1 ? "película" : "películas"}
+              .
             </>
           ) : (
             <>Tu historia en el cine está por comenzar.</>
@@ -371,7 +388,8 @@ function CineWrapped() {
             >
               {wrapped.ultimaPelicula.poster ? (
                 <img
-                  src={wrapped.ultimaPelicula.poster}
+                  // Obtenemos la dirección completa de la portada.
+                  src={obtenerUrlPoster(wrapped.ultimaPelicula.poster)}
                   alt={`Póster de ${wrapped.ultimaPelicula.titulo}`}
                 />
               ) : (
@@ -415,10 +433,7 @@ function CineWrapped() {
           ================================================= */}
 
       <section className="wrapped-confiteria">
-        <div
-          className="wrapped-confiteria-encabezado revelar"
-          data-revelar
-        >
+        <div className="wrapped-confiteria-encabezado revelar" data-revelar>
           <p className="etiqueta">Tus compras favoritas</p>
 
           <h2>Tu Wrapped de confitería 🍿</h2>

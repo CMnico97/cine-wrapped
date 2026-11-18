@@ -1,39 +1,60 @@
+
 // Importamos herramientas de React.
 import { useEffect, useState } from "react";
 
 // useParams permite obtener parámetros desde la URL.
 //
-// Por ejemplo:
-//
-// /peliculas/1
-//
-// nos permitirá obtener:
-//
-// id = "1"
-//
 // Link nos permitirá regresar a la cartelera.
 import { Link, useParams } from "react-router-dom";
 
-// Importamos la función encargada de consultar
-// una película específica.
+// Importamos las funciones encargadas de consultar
+// la película y sus funciones disponibles.
 import {
   obtenerPeliculaPorId,
   obtenerFuncionesPorPelicula,
 } from "../services/api";
 
 // =====================================================
+// CONFIGURACIÓN DEL BACKEND
+// =====================================================
+
+// Dirección donde se encuentra nuestro servidor Express.
+const API_URL = "http://localhost:3000";
+
+// =====================================================
+// OBTENER URL DE LA PORTADA
+// =====================================================
+
+// Convierte las rutas relativas de las imágenes
+// en direcciones completas para que React pueda mostrarlas.
+const obtenerUrlPoster = (poster) => {
+  // Si la película no tiene portada, devolvemos vacío.
+  if (!poster) {
+    return "";
+  }
+
+  // Si ya tiene una dirección completa, la conservamos.
+  // Esto mantiene compatibilidad con portadas antiguas.
+  if (poster.startsWith("http")) {
+    return poster;
+  }
+
+  // Agregamos la dirección del backend a la ruta local.
+  return `${API_URL}${poster}`;
+};
+
+// =====================================================
 // DETALLE DE PELÍCULA
 // =====================================================
 
 function DetallePelicula() {
-  // Obtenemos el :id definido en nuestra ruta.
+  // Obtenemos el identificador desde la URL.
   const { id } = useParams();
 
   // Guardamos la película recibida desde Express.
   const [pelicula, setPelicula] = useState(null);
 
-  // Guardamos las funciones disponibles
-  // correspondientes a esta película.
+  // Guardamos las funciones disponibles.
   const [funciones, setFunciones] = useState([]);
 
   // Controlamos el estado de carga.
@@ -49,20 +70,14 @@ function DetallePelicula() {
   useEffect(() => {
     const cargarPelicula = async () => {
       try {
-        // Consultamos simultáneamente:
-        //
-        // 1. El detalle de la película.
-        // 2. Sus funciones disponibles.
-        //
-        // Promise.all permite realizar ambas peticiones
-        // al mismo tiempo.
+        // Consultamos simultáneamente el detalle
+        // de la película y sus funciones disponibles.
         const [peliculaObtenida, funcionesObtenidas] = await Promise.all([
           obtenerPeliculaPorId(id),
           obtenerFuncionesPorPelicula(id),
         ]);
 
-        // Guardamos ambos resultados
-        // en sus respectivos estados.
+        // Guardamos los resultados en sus estados.
         setPelicula(peliculaObtenida);
         setFunciones(funcionesObtenidas);
       } catch (errorPeticion) {
@@ -116,7 +131,12 @@ function DetallePelicula() {
       <section className="detalle-pelicula">
         <div className="poster detalle-poster">
           {pelicula.poster ? (
-            <img src={pelicula.poster} alt={`Póster de ${pelicula.titulo}`} />
+            <img
+              // Utilizamos la dirección completa del backend
+              // para mostrar correctamente la portada.
+              src={obtenerUrlPoster(pelicula.poster)}
+              alt={`Póster de ${pelicula.titulo}`}
+            />
           ) : (
             <span>Sin póster</span>
           )}
@@ -127,29 +147,30 @@ function DetallePelicula() {
 
           <h1>{pelicula.titulo}</h1>
 
-          <p className="pelicula-datos">{pelicula.duracion} minutos</p>
+          <p className="pelicula-datos">
+            {pelicula.duracion} minutos
+          </p>
 
           <p>{pelicula.sinopsis}</p>
 
           <p>
             <strong>Director:</strong> {pelicula.director}
           </p>
-          {/* 
-    =================================================
-    FUNCIONES DISPONIBLES
-    ================================================= */}
+
+          {/* =================================================
+              FUNCIONES DISPONIBLES
+              ================================================= */}
 
           <section className="funciones">
             <h2>Funciones disponibles</h2>
 
-            {/* Si la película todavía no tiene funciones,
-      mostramos un mensaje informativo. */}
+            {/* Si no existen funciones, mostramos
+                un mensaje informativo. */}
             {funciones.length === 0 ? (
               <p>No hay funciones disponibles para esta película.</p>
             ) : (
               <div className="lista-funciones">
-                {/* Construimos una opción por cada función
-          recibida desde nuestra API. */}
+                {/* Mostramos cada función recibida desde la API. */}
                 {funciones.map((funcion) => (
                   <Link
                     className="funcion"
@@ -164,7 +185,9 @@ function DetallePelicula() {
                       {funcion.hora.slice(0, 5)}
                     </span>
 
-                    <span className="funcion-sala">Sala {funcion.sala}</span>
+                    <span className="funcion-sala">
+                      Sala {funcion.sala}
+                    </span>
                   </Link>
                 ))}
               </div>

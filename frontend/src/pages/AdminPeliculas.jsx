@@ -41,6 +41,25 @@ const formularioInicial = {
   fecha_estreno: "",
 };
 
+// Dirección del backend donde se almacenarán
+// y publicarán las imágenes de las películas.
+const API_URL = "http://localhost:3000";
+
+// Convierte la ruta guardada en MySQL
+// en una dirección que el navegador pueda mostrar.
+const obtenerUrlPoster = (poster) => {
+  if (!poster) return "";
+
+  // Si ya es una URL completa, la conservamos.
+  if (poster.startsWith("http")) {
+    return poster;
+  }
+
+  // Si es una ruta del servidor, agregamos
+  // la dirección base del backend.
+  return `${API_URL}${poster}`;
+};
+
 // =====================================================
 // ADMINISTRACIÓN DE PELÍCULAS
 // =====================================================
@@ -79,9 +98,43 @@ function AdminPeliculas() {
   // Guardamos mensajes de éxito.
   const [mensaje, setMensaje] = useState(null);
 
+  // Archivo de imagen seleccionado desde el computador.
+  const [imagenSeleccionada, setImagenSeleccionada] = useState(null);
+
+  // URL temporal utilizada para mostrar una vista previa.
+  const [vistaPrevia, setVistaPrevia] = useState(null);
+
+  // Cambiamos esta clave para reiniciar el input
+  // de archivo cuando limpiamos el formulario.
+  const [claveInputImagen, setClaveInputImagen] = useState(0);
+
   // ===================================================
   // CARGAR PELÍCULAS
   // ===================================================
+
+  // ===================================================
+  // VISTA PREVIA DE LA IMAGEN
+  // ===================================================
+
+  // Cuando el administrador selecciona una imagen,
+  // creamos una URL temporal para mostrarla.
+  useEffect(() => {
+    if (!imagenSeleccionada) {
+      setVistaPrevia(null);
+      return;
+    }
+
+    // Creamos una dirección temporal para el archivo.
+    const urlTemporal = URL.createObjectURL(imagenSeleccionada);
+
+    setVistaPrevia(urlTemporal);
+
+    // Liberamos la URL temporal cuando cambia
+    // la imagen o se desmonta el componente.
+    return () => {
+      URL.revokeObjectURL(urlTemporal);
+    };
+  }, [imagenSeleccionada]);
 
   const cargarPeliculas = async () => {
     try {
@@ -130,8 +183,14 @@ function AdminPeliculas() {
   // ===================================================
 
   const limpiarFormulario = () => {
-    // Restauramos todos los campos.
+    // Restauramos todos los campos del formulario.
     setFormulario(formularioInicial);
+
+    // Eliminamos cualquier imagen seleccionada.
+    setImagenSeleccionada(null);
+
+    // Reiniciamos el input de archivo.
+    setClaveInputImagen((clave) => clave + 1);
 
     // Salimos del modo edición.
     setPeliculaEditando(null);
@@ -178,13 +237,22 @@ function AdminPeliculas() {
       // Si tenemos un id guardado,
       // estamos actualizando una película.
       if (peliculaEditando) {
-        await actualizarPeliculaAdmin(peliculaEditando, datosPelicula, token);
+        // Enviamos los datos y la nueva imagen seleccionada.
+        //
+        // Si no se seleccionó una imagen nueva,
+        // enviamos null para conservar la portada anterior.
+        await actualizarPeliculaAdmin(
+          peliculaEditando,
+          datosPelicula,
+          imagenSeleccionada,
+          token,
+        );
 
         setMensaje("Película actualizada correctamente.");
       } else {
-        // Si no existe id,
-        // creamos una película nueva.
-        await crearPeliculaAdmin(datosPelicula, token);
+        // Creamos una película enviando sus datos
+        // y el archivo de portada seleccionado.
+        await crearPeliculaAdmin(datosPelicula, imagenSeleccionada, token);
 
         setMensaje("Película creada correctamente.");
       }
@@ -236,6 +304,13 @@ function AdminPeliculas() {
         ? pelicula.fecha_estreno.slice(0, 10)
         : "",
     });
+
+    // Al editar, comenzamos sin una imagen nueva.
+    // La portada actual se conserva en el formulario.
+    setImagenSeleccionada(null);
+
+    // Reiniciamos el selector de archivos.
+    setClaveInputImagen((clave) => clave + 1);
 
     // Limpiamos mensajes anteriores.
     setError(null);
@@ -391,16 +466,46 @@ function AdminPeliculas() {
             />
           </label>
 
+          {/* =================================================
+    SELECCIONAR PORTADA
+    ================================================= */}
+
           <label>
-            URL del póster
+            Imagen de portada
+            {/* El administrador selecciona una imagen
+      directamente desde su computador. */}
             <input
-              type="url"
-              name="poster"
-              value={formulario.poster}
-              onChange={manejarCambio}
-              placeholder="https://..."
+              key={claveInputImagen}
+              type="file"
+              accept="image/png, image/jpeg"
+              onChange={(evento) => {
+                // Guardamos el archivo seleccionado.
+                const archivo = evento.target.files?.[0] || null;
+
+                setImagenSeleccionada(archivo);
+              }}
             />
           </label>
+
+          {/* Mostramos una vista previa de la imagen.
+    Si no hay una nueva selección, mostramos
+    la portada que ya tiene la película. */}
+          {(vistaPrevia || formulario.poster) && (
+            <div className="admin-portada-preview">
+              <p>Vista previa de la portada:</p>
+
+              <img
+                src={vistaPrevia || obtenerUrlPoster(formulario.poster)}
+                alt="Vista previa de la portada"
+                style={{
+                  width: "180px",
+                  height: "260px",
+                  objectFit: "cover",
+                  borderRadius: "8px",
+                }}
+              />
+            </div>
+          )}
 
           <label>
             Fecha de estreno

@@ -5,6 +5,20 @@ import { Link } from "react-router-dom";
 // NUEVO: carrusel con películas de la cartelera.
 import CarruselPeliculas from "../components/CarruselPeliculas";
 
+// Dirección del backend donde se almacenan las imágenes.
+const API_URL = "http://localhost:3000";
+
+// Construimos la dirección completa de la portada.
+const obtenerUrlPoster = (poster) => {
+  if (!poster) return "";
+
+  // Si ya es una URL completa, la dejamos igual.
+  if (poster.startsWith("http")) return poster;
+
+  // Si es una ruta del backend, agregamos su dirección.
+  return `${API_URL}${poster}`;
+};
+
 // =====================================================
 // PÁGINA DE INICIO
 // =====================================================

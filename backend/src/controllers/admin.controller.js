@@ -20,24 +20,19 @@ const {
 // CREAR PELÍCULA
 // =====================================================
 
-// Controlador correspondiente a:
+// Controlador correspondiente a POST /admin/peliculas.
 //
-// POST /admin/peliculas
-//
-// Esta ruta solamente podrá ejecutarse si:
-//
-// 1. El usuario tiene un JWT válido.
-// 2. El usuario tiene rol "admin".
+// Recibe los datos de la película y, opcionalmente,
+// el archivo de portada procesado por Multer.
 const crearPelicula = async (req, res) => {
   try {
-    // Obtenemos los datos enviados mediante JSON.
+    // Obtenemos los datos de texto enviados desde React.
     const {
       titulo,
       sinopsis,
       duracion,
       genero,
       director,
-      poster,
       fecha_estreno,
     } = req.body;
 
@@ -45,9 +40,6 @@ const crearPelicula = async (req, res) => {
     // VALIDAR CAMPOS OBLIGATORIOS
     // =================================================
 
-    // Estos campos son NOT NULL en nuestra
-    // base de datos y forman parte de la información
-    // mínima necesaria para una película.
     if (
       !titulo ||
       !sinopsis ||
@@ -65,11 +57,8 @@ const crearPelicula = async (req, res) => {
     // VALIDAR DURACIÓN
     // =================================================
 
-    // Convertimos la duración a número para evitar
-    // almacenar valores inválidos.
     const duracionNumero = Number(duracion);
 
-    // La duración debe ser un número entero positivo.
     if (!Number.isInteger(duracionNumero) || duracionNumero <= 0) {
       return res.status(400).json({
         ok: false,
@@ -78,19 +67,28 @@ const crearPelicula = async (req, res) => {
     }
 
     // =================================================
+    // OBTENER RUTA DE LA PORTADA
+    // =================================================
+
+    // Multer guarda el archivo físicamente en uploads/posters.
+    // En MySQL solamente guardaremos su ruta pública.
+    //
+    // Si no se seleccionó una imagen, guardamos NULL.
+    const posterRuta = req.file
+      ? `/uploads/posters/${req.file.filename}`
+      : null;
+
+    // =================================================
     // CREAR PELÍCULA
     // =================================================
 
-    // poster y fecha_estreno pueden no ser enviados.
-    //
-    // En ese caso guardamos NULL en MySQL.
     const peliculaId = await crearPeliculaService(
       titulo.trim(),
       sinopsis.trim(),
       duracionNumero,
       genero.trim(),
       director.trim(),
-      poster || null,
+      posterRuta,
       fecha_estreno || null,
     );
 
@@ -108,13 +106,11 @@ const crearPelicula = async (req, res) => {
         duracion: duracionNumero,
         genero: genero.trim(),
         director: director.trim(),
-        poster: poster || null,
+        poster: posterRuta,
         fecha_estreno: fecha_estreno || null,
       },
     });
   } catch (error) {
-    // Mostramos el error en la terminal para facilitar
-    // la depuración durante el desarrollo.
     console.error("Error al crear película:", error.message);
 
     return res.status(500).json({
@@ -128,15 +124,13 @@ const crearPelicula = async (req, res) => {
 // ACTUALIZAR PELÍCULA
 // =====================================================
 
-// Controlador correspondiente a:
+// Controlador correspondiente a PUT /admin/peliculas/:id.
 //
-// PUT /admin/peliculas/:id
-//
-// Permite modificar una película existente.
+// Permite actualizar los datos de una película
+// y reemplazar su portada si se recibe otra imagen.
 const actualizarPelicula = async (req, res) => {
   try {
-    // Convertimos el parámetro recibido en la URL
-    // a un número.
+    // Obtenemos el identificador desde la URL.
     const peliculaId = Number(req.params.id);
 
     // =================================================
@@ -173,7 +167,6 @@ const actualizarPelicula = async (req, res) => {
       duracion,
       genero,
       director,
-      poster,
       fecha_estreno,
     } = req.body;
 
@@ -208,6 +201,18 @@ const actualizarPelicula = async (req, res) => {
     }
 
     // =================================================
+    // CONSERVAR O REEMPLAZAR PORTADA
+    // =================================================
+
+    // Si se recibió una imagen nueva, utilizamos su ruta.
+    //
+    // Si no se recibió ninguna imagen, conservamos
+    // la ruta de la portada que ya estaba en MySQL.
+    const posterRuta = req.file
+      ? `/uploads/posters/${req.file.filename}`
+      : peliculaExistente.poster;
+
+    // =================================================
     // ACTUALIZAR EN LA BASE DE DATOS
     // =================================================
 
@@ -218,7 +223,7 @@ const actualizarPelicula = async (req, res) => {
       duracionNumero,
       genero.trim(),
       director.trim(),
-      poster || null,
+      posterRuta,
       fecha_estreno || null,
     );
 
@@ -236,7 +241,7 @@ const actualizarPelicula = async (req, res) => {
         duracion: duracionNumero,
         genero: genero.trim(),
         director: director.trim(),
-        poster: poster || null,
+        poster: posterRuta,
         fecha_estreno: fecha_estreno || null,
       },
     });

@@ -3,6 +3,21 @@ import { Link } from "react-router-dom";
 
 import { obtenerPeliculas } from "../services/api";
 
+// Dirección del servidor backend.
+const API_URL = "http://localhost:3000";
+
+// Convierte la ruta de la portada en una URL completa.
+const obtenerUrlPoster = (poster) => {
+  // Si no existe una portada, devolvemos una cadena vacía.
+  if (!poster) return "";
+
+  // Si ya es una URL completa, la mantenemos.
+  if (poster.startsWith("http")) return poster;
+
+  // Agregamos la dirección del backend a la ruta recibida.
+  return `${API_URL}${poster}`;
+};
+
 // =====================================================
 // CARRUSEL DE PELÍCULAS (para la página de inicio)
 // =====================================================
@@ -146,7 +161,17 @@ function CarruselPeliculas() {
             aria-label="Películas anteriores"
             onClick={() => desplazar(pista.current, -1)}
           >
-            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <svg
+              viewBox="0 0 24 24"
+              width="18"
+              height="18"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              aria-hidden="true"
+            >
               <path d="m15 18-6-6 6-6" />
             </svg>
           </button>
@@ -157,7 +182,17 @@ function CarruselPeliculas() {
             aria-label="Películas siguientes"
             onClick={() => desplazar(pista.current, 1)}
           >
-            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <svg
+              viewBox="0 0 24 24"
+              width="18"
+              height="18"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              aria-hidden="true"
+            >
               <path d="m9 18 6-6-6-6" />
             </svg>
           </button>
@@ -174,7 +209,8 @@ function CarruselPeliculas() {
             <div className="carrusel-poster">
               {pelicula.poster ? (
                 <img
-                  src={pelicula.poster}
+                  // Utilizamos la URL completa para cargar la portada.
+                  src={obtenerUrlPoster(pelicula.poster)}
                   alt={`Póster de ${pelicula.titulo}`}
                 />
               ) : (

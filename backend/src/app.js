@@ -39,6 +39,10 @@ const productoRoutes = require("./routes/producto.routes");
 // Importamos las rutas de compras de confitería.
 const compraConfiteriaRoutes = require("./routes/compraConfiteria.routes");
 
+// Importamos path para construir la ubicación
+// de la carpeta donde se guardan las imágenes.
+const path = require("path");
+
 // =====================================================
 // CREACIÓN DE LA APLICACIÓN
 // =====================================================
@@ -76,6 +80,28 @@ app.use(cors());
 //   "password": "123456"
 // }
 app.use(express.json());
+
+// =====================================================
+// PUBLICAR IMÁGENES DE PORTADA
+// =====================================================
+
+// Permitimos que React pueda acceder a las imágenes
+// almacenadas dentro de la carpeta uploads.
+app.use("/uploads", express.static(path.join(__dirname, "uploads")));
+
+// =====================================================
+// SERVIR IMÁGENES DE PORTADAS
+// =====================================================
+
+// Permitimos que el frontend pueda acceder
+// a las imágenes almacenadas en la carpeta uploads.
+//
+// Ejemplo de archivo:
+// backend/uploads/posters/dune.jpg
+//
+// URL pública:
+// http://localhost:3000/uploads/posters/dune.jpg
+app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
 // =====================================================
 // RUTAS DE LA API
@@ -223,6 +249,8 @@ app.get("/api/health/database", async (req, res) => {
     });
   }
 });
+
+
 
 // =====================================================
 // EXPORTACIÓN DE LA APLICACIÓN

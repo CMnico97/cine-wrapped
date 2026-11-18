@@ -393,35 +393,63 @@ export const obtenerWrapped = async (token) => {
 // CREAR PELÍCULA
 // =====================================================
 
-// Crea una nueva película.
+// Crea una nueva película y permite enviar
+// una imagen de portada desde el computador.
 //
 // Endpoint:
 //
 // POST /admin/peliculas
 //
-// Esta ruta requiere un JWT perteneciente
-// a un usuario administrador.
-export const crearPeliculaAdmin = async (pelicula, token) => {
+// Recibe:
+// pelicula: objeto con los datos de la película.
+// imagen: archivo seleccionado desde el computador.
+// token: JWT del administrador.
+
+export const crearPeliculaAdmin = async (pelicula, imagen, token) => {
+  // Creamos un FormData para enviar conjuntamente
+  // los datos de la película y el archivo de imagen.
+  const datosFormulario = new FormData();
+
+  // Agregamos cada dato de la película al FormData.
+  Object.entries(pelicula).forEach(([campo, valor]) => {
+    // Solamente agregamos valores que no sean null
+    // ni undefined.
+    if (valor !== null && valor !== undefined) {
+      datosFormulario.append(campo, String(valor));
+    }
+  });
+
+  // Si el administrador seleccionó una imagen,
+  // la agregamos con el nombre "poster".
+  //
+  // Este nombre deberá coincidir con Multer
+  // en nuestro backend.
+  if (imagen) {
+    datosFormulario.append("poster", imagen);
+  }
+
+  // Enviamos la petición al backend.
   const respuesta = await fetch(`${API_URL}/admin/peliculas`, {
     method: "POST",
 
     headers: {
-      // Indicamos que enviaremos JSON.
-      "Content-Type": "application/json",
-
       // Enviamos el JWT del administrador.
       Authorization: `Bearer ${token}`,
     },
 
-    // Convertimos los datos de la película
-    // a formato JSON.
-    body: JSON.stringify(pelicula),
+    // Enviamos FormData en lugar de JSON.
+    //
+    // IMPORTANTE:
+    // No debemos establecer manualmente
+    // Content-Type. El navegador lo configura.
+    body: datosFormulario,
   });
 
+  // Convertimos la respuesta del backend a JSON.
   const datos = await respuesta.json();
 
   // Si Express rechaza la operación,
-  // mostramos su mensaje.
+  // mostramos el mensaje correspondiente.
   if (!respuesta.ok) {
     throw new Error(datos.message || "No fue posible crear la película");
   }
@@ -438,20 +466,53 @@ export const crearPeliculaAdmin = async (pelicula, token) => {
 // Endpoint:
 //
 // PUT /admin/peliculas/:id
-export const actualizarPeliculaAdmin = async (id, pelicula, token) => {
+//
+// Permite enviar una nueva portada si el administrador
+// selecciona otro archivo.
+//
+// Si no selecciona una imagen, el backend
+// conservará la portada anterior.
+
+export const actualizarPeliculaAdmin = async (
+  id,
+  pelicula,
+  imagen,
+  token,
+) => {
+  // Creamos el FormData para enviar
+  // los datos de la película.
+  const datosFormulario = new FormData();
+
+  // Agregamos los campos de la película.
+  Object.entries(pelicula).forEach(([campo, valor]) => {
+    if (valor !== null && valor !== undefined) {
+      datosFormulario.append(campo, String(valor));
+    }
+  });
+
+  // Si se seleccionó una nueva portada,
+  // agregamos el archivo al FormData.
+  if (imagen) {
+    datosFormulario.append("poster", imagen);
+  }
+
+  // Enviamos la actualización al backend.
   const respuesta = await fetch(`${API_URL}/admin/peliculas/${id}`, {
     method: "PUT",
 
     headers: {
-      "Content-Type": "application/json",
+      // Autenticamos al administrador.
       Authorization: `Bearer ${token}`,
     },
 
-    body: JSON.stringify(pelicula),
+    // Enviamos los datos y la imagen.
+    body: datosFormulario,
   });
 
+  // Convertimos la respuesta a JSON.
   const datos = await respuesta.json();
 
+  // Controlamos los posibles errores.
   if (!respuesta.ok) {
     throw new Error(datos.message || "No fue posible actualizar la película");
   }

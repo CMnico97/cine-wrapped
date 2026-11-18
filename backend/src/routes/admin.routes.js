@@ -25,6 +25,10 @@ const {
   eliminarFuncion,
 } = require("../controllers/admin.controller");
 
+// Importamos el middleware encargado de recibir
+// las imágenes de portada de las películas.
+const subirPortada = require("../middleware/subirPortada");
+
 // =====================================================
 // CREACIÓN DEL ROUTER
 // =====================================================
@@ -50,6 +54,17 @@ router.use(verificarToken, verificarAdmin);
 // =====================================================
 // ADMINISTRACIÓN DE PELÍCULAS
 // =====================================================
+
+// Crear película: primero recibimos la imagen
+// y después ejecutamos el controlador.
+router.post("/peliculas", subirPortada, crearPelicula);
+
+// Actualizar película: permite recibir una nueva
+// imagen o conservar la portada anterior.
+router.put("/peliculas/:id", subirPortada, actualizarPelicula);
+
+// Eliminar película: no necesita recibir imágenes.
+router.delete("/peliculas/:id", eliminarPelicula);
 
 // Permite crear una nueva película.
 //
